@@ -1,7 +1,9 @@
 (function () {
-  const EVENT_KEY = "impossibleLocalAnalyticsEvents";
+  const EVENT_KEY = "plaiLocalAnalyticsEvents";
+  const LEGACY_EVENT_KEY = "impossibleLocalAnalyticsEvents";
   const IMPROVEMENT_KEY = "approvedUxImprovements";
-  const SESSION_KEY = "impossibleLocalAnalyticsSession";
+  const SESSION_KEY = "plaiLocalAnalyticsSession";
+  const LEGACY_SESSION_KEY = "impossibleLocalAnalyticsSession";
   const defaults = {
     repeatedClickWindowMs: 2500,
     repeatedClickThreshold: 3,
@@ -17,6 +19,12 @@
     try {
       const existing = sessionStorage.getItem(SESSION_KEY);
       if (existing) return existing;
+      const legacyExisting = sessionStorage.getItem(LEGACY_SESSION_KEY);
+      if (legacyExisting) {
+        sessionStorage.setItem(SESSION_KEY, legacyExisting);
+        sessionStorage.removeItem(LEGACY_SESSION_KEY);
+        return legacyExisting;
+      }
       const id = `session-${Date.now()}-${Math.random().toString(16).slice(2)}`;
       sessionStorage.setItem(SESSION_KEY, id);
       return id;
@@ -35,7 +43,11 @@
 
   function readEvents() {
     try {
-      return JSON.parse(localStorage.getItem(EVENT_KEY) || "[]");
+      const storedEvents = localStorage.getItem(EVENT_KEY);
+      if (storedEvents) return JSON.parse(storedEvents);
+      const legacyEvents = JSON.parse(localStorage.getItem(LEGACY_EVENT_KEY) || "[]");
+      if (legacyEvents.length) return writeEvents(legacyEvents);
+      return [];
     } catch (error) {
       return [];
     }
@@ -45,31 +57,35 @@
     const trimmedEvents = events.slice(-defaults.maxStoredEvents);
     try {
       localStorage.setItem(EVENT_KEY, JSON.stringify(trimmedEvents));
+      localStorage.removeItem(LEGACY_EVENT_KEY);
       return trimmedEvents;
     } catch (error) {
       if (!isStorageQuotaError(error)) {
-        console.warn("PlayAI analytics could not be saved.", error);
+        console.warn("Plai analytics could not be saved.", error);
         return trimmedEvents;
       }
 
       const fallbackEvents = trimmedEvents.slice(-defaults.quotaRetryEvents);
       try {
         localStorage.removeItem(EVENT_KEY);
+        localStorage.removeItem(LEGACY_EVENT_KEY);
         localStorage.setItem(EVENT_KEY, JSON.stringify(fallbackEvents));
         return fallbackEvents;
       } catch (retryError) {
         const emergencyEvents = trimmedEvents.slice(-defaults.emergencyRetryEvents);
         try {
           localStorage.removeItem(EVENT_KEY);
+          localStorage.removeItem(LEGACY_EVENT_KEY);
           localStorage.setItem(EVENT_KEY, JSON.stringify(emergencyEvents));
           return emergencyEvents;
         } catch (finalError) {
           try {
             localStorage.removeItem(EVENT_KEY);
+            localStorage.removeItem(LEGACY_EVENT_KEY);
           } catch {
             // Storage may be unavailable; the page should still keep working.
           }
-          console.warn("PlayAI analytics storage is full; analytics persistence has been paused.", finalError || retryError);
+          console.warn("Plai analytics storage is full; analytics persistence has been paused.", finalError || retryError);
           return [];
         }
       }
@@ -93,8 +109,13 @@
     const events = readEvents();
     events.push(event);
     writeEvents(events);
-    window.dispatchEvent(new CustomEvent("impossible:analytics-event", { detail: event }));
+    dispatchAnalyticsEvent(event);
     return event;
+  }
+
+  function dispatchAnalyticsEvent(event) {
+    window.dispatchEvent(new CustomEvent("plai:analytics-event", { detail: event }));
+    window.dispatchEvent(new CustomEvent("impossible:analytics-event", { detail: event }));
   }
 
   function trackRepeatedClick(clickKey, properties = {}) {
@@ -143,7 +164,8 @@
 
   function clearEvents() {
     localStorage.removeItem(EVENT_KEY);
-    window.dispatchEvent(new CustomEvent("impossible:analytics-event"));
+    localStorage.removeItem(LEGACY_EVENT_KEY);
+    dispatchAnalyticsEvent();
   }
 
   function exportJson() {
