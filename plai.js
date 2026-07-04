@@ -53,7 +53,7 @@ const PLAYAI_BACKLOG_API_URL = `${PLAYAI_API_BASE}/api/backlog`;
 const LOTTERY_HELPER_DISMISSED_KEY = "impossibleLotteryHelperDismissed";
 const SITE_LANGUAGE_KEY = "impossibleSiteLanguage";
 const OFFER_EXPERIMENT_INDEX_KEY = "impossibleOfferExperimentIndex";
-const CATALOGUE_CACHE_VERSION = 3;
+const CATALOGUE_CACHE_VERSION = 5;
 const PLAYAI_ROUTES = new Set([
   "ai-backlog",
   "ai-markets",
@@ -468,6 +468,12 @@ const TRANSLATION_CACHE = new Map();
 const OFFICIAL_GAME_IMAGE_BASE = "https://beta.lottoland.co.uk/scs/games/omni-content/public/v3/game-image/en_GB";
 const officialGameImage = (gameId) => `${OFFICIAL_GAME_IMAGE_BASE}/${gameId}/background.png`;
 
+const bingoFallbackImages = [
+  "https://cdn-assets-eu.frontify.com/s3/frontify-enterprise-files-eu/eyJvYXV0aCI6eyJjbGllbnRfaWQiOiJjbGllbnQtZmhweXV6cXNtcm8xYm56NiJ9LCJwYXRoIjoibG90dG9sYW5kXC9maWxlXC9CNWc1Vk1vVkFpVTZ6aU1IaFE5Uy5qcGcifQ:lottoland:1JUhC7WmKwsBS19ssaLXrXGvVKDQ5gpRk4-P9WxyaDo?type=jpg&width=320&quality=75",
+  "https://cdn-assets-eu.frontify.com/s3/frontify-enterprise-files-eu/eyJvYXV0aCI6eyJjbGllbnRfaWQiOiJjbGllbnQtZmhweXV6cXNtcm8xYm56NiJ9LCJwYXRoIjoibG90dG9sYW5kXC9hY2NvdW50c1wvMDlcLzQwMDA4MzBcL3Byb2plY3RzXC83XC9hc3NldHNcLzYxXC83Mzc5MVwvOTdjMzg0ZWNkZGI5YjcyZjllMTI2ZTY5MzEyNzhiZTYtMTY1MDUzNjgyNi5wbmcifQ:lottoland:ob7WOPaNijk919eKGrEIVqDjn2sQtBDcn-K-BMCnufY?width=320&type=png",
+  "https://cdn-assets-eu.frontify.com/s3/frontify-enterprise-files-eu/eyJvYXV0aCI6eyJjbGllbnRfaWQiOiJjbGllbnQtZmhweXV6cXNtcm8xYm56NiJ9LCJwYXRoIjoibG90dG9sYW5kXC9hY2NvdW50c1wvMDlcLzQwMDA4MzBcL3Byb2plY3RzXC83XC9hc3NldHNcL2EwXC83Mzc4OVwvYmRmNzExODdiODRlZjM5MjAzZGMxZGIyZTkzYTZiYTYtMTY1MDUzNjgyNi5wbmcifQ:lottoland:qd4B52vr6FaNTWEmcbwhwbvkmf1xcD7gMnxn0BxVfUw?width=320&type=png"
+];
+
 const fallbackGames = [
   {
     id: "starburst",
@@ -494,6 +500,14 @@ const fallbackGames = [
     playUrl: "https://beta.lottoland.co.uk/casino"
   },
   {
+    id: "big-bass-bonanza",
+    source: "casino",
+    name: "Big Bass Bonanza",
+    provider: "Pragmatic",
+    image: officialGameImage("BigBassBonanza"),
+    playUrl: "https://beta.lottoland.co.uk/casino"
+  },
+  {
     id: "gates-olympus",
     source: "casino",
     name: "Gates of Olympus",
@@ -502,10 +516,66 @@ const fallbackGames = [
     playUrl: "https://beta.lottoland.co.uk/casino"
   },
   {
+    id: "gates-olympus-1000",
+    source: "casino",
+    name: "Gates of Olympus 1000",
+    provider: "Pragmatic",
+    image: officialGameImage("GatesOfOlympus"),
+    playUrl: "https://beta.lottoland.co.uk/casino"
+  },
+  {
+    id: "big-bass-boxing-bonus-round",
+    source: "casino",
+    name: "Big Bass Boxing Bonus Round",
+    provider: "Pragmatic",
+    image: officialGameImage("BigBassBoxingBonusRound"),
+    playUrl: "https://beta.lottoland.co.uk/casino"
+  },
+  {
+    id: "book-of-dead",
+    source: "casino",
+    name: "Book of Dead",
+    provider: "Play'n GO",
+    image: officialGameImage("BookOfDead"),
+    playUrl: "https://beta.lottoland.co.uk/casino"
+  },
+  {
+    id: "777-strike",
+    source: "casino",
+    name: "777 Strike",
+    provider: "Red Tiger",
+    image: officialGameImage("777Strike"),
+    playUrl: "https://beta.lottoland.co.uk/casino"
+  },
+  {
+    id: "aliens-among-us",
+    source: "casino",
+    name: "Aliens Among Us",
+    provider: "Hacksaw",
+    image: officialGameImage("AliensAmongUs"),
+    playUrl: "https://beta.lottoland.co.uk/casino"
+  },
+  {
+    id: "double-bubble",
+    source: "casino",
+    name: "Double Bubble",
+    provider: "Anaxi",
+    image: officialGameImage("DoubleBubble"),
+    playUrl: "https://beta.lottoland.co.uk/casino"
+  },
+  {
+    id: "shark-boss",
+    source: "casino",
+    name: "Shark Boss",
+    provider: "Lottoland",
+    image: officialGameImage("BrandedSharkBoss"),
+    playUrl: "https://beta.lottoland.co.uk/casino"
+  },
+  {
     id: "live-roulette",
     source: "live",
     name: "Live Roulette",
-    provider: "Live Casino",
+    provider: "Evolution",
     image: officialGameImage("LiveRoulette"),
     playUrl: "https://beta.lottoland.co.uk/live-casino"
   },
@@ -526,11 +596,67 @@ const fallbackGames = [
     playUrl: "https://beta.lottoland.co.uk/live-casino"
   },
   {
+    id: "live-blackjack",
+    source: "live",
+    name: "Live Blackjack",
+    provider: "Evolution",
+    image: officialGameImage("LiveBlackjack"),
+    playUrl: "https://beta.lottoland.co.uk/live-casino"
+  },
+  {
+    id: "blackjack",
+    source: "live",
+    name: "Blackjack",
+    provider: "Evolution",
+    image: officialGameImage("Blackjack"),
+    playUrl: "https://beta.lottoland.co.uk/live-casino"
+  },
+  {
+    id: "speed-roulette",
+    source: "live",
+    name: "Speed Roulette",
+    provider: "Evolution",
+    image: officialGameImage("SpeedRoulette"),
+    playUrl: "https://beta.lottoland.co.uk/live-casino"
+  },
+  {
+    id: "live-baccarat",
+    source: "live",
+    name: "Live Baccarat",
+    provider: "Evolution",
+    image: officialGameImage("LiveBaccarat"),
+    playUrl: "https://beta.lottoland.co.uk/live-casino"
+  },
+  {
+    id: "live-dragon-tiger",
+    source: "live",
+    name: "Live Dragon Tiger",
+    provider: "Evolution",
+    image: officialGameImage("LiveDragonTiger"),
+    playUrl: "https://beta.lottoland.co.uk/live-casino"
+  },
+  {
+    id: "dragon-tiger",
+    source: "live",
+    name: "Dragon Tiger",
+    provider: "Evolution",
+    image: officialGameImage("DragonTiger"),
+    playUrl: "https://beta.lottoland.co.uk/live-casino"
+  },
+  {
+    id: "live-casino-holdem",
+    source: "live",
+    name: "Live Casino Hold'em",
+    provider: "Evolution",
+    image: officialGameImage("LiveCasinoHoldem"),
+    playUrl: "https://beta.lottoland.co.uk/live-casino"
+  },
+  {
     id: "bingo-room",
     source: "bingo",
     name: "Big Bass Bingo",
     provider: "Bingo",
-    image: "https://cdn-assets-eu.frontify.com/s3/frontify-enterprise-files-eu/eyJvYXV0aCI6eyJjbGllbnRfaWQiOiJjbGllbnQtZmhweXV6cXNtcm8xYm56NiJ9LCJwYXRoIjoibG90dG9sYW5kXC9maWxlXC9CNWc1Vk1vVkFpVTZ6aU1IaFE5Uy5qcGcifQ:lottoland:1JUhC7WmKwsBS19ssaLXrXGvVKDQ5gpRk4-P9WxyaDo?type=jpg&width=320&quality=75",
+    image: bingoFallbackImages[0],
     playUrl: "https://beta.lottoland.co.uk/bingo"
   },
   {
@@ -538,7 +664,7 @@ const fallbackGames = [
     source: "bingo",
     name: "Powerful Bingo",
     provider: "Bingo",
-    image: "https://cdn-assets-eu.frontify.com/s3/frontify-enterprise-files-eu/eyJvYXV0aCI6eyJjbGllbnRfaWQiOiJjbGllbnQtZmhweXV6cXNtcm8xYm56NiJ9LCJwYXRoIjoibG90dG9sYW5kXC9hY2NvdW50c1wvMDlcLzQwMDA4MzBcL3Byb2plY3RzXC83XC9hc3NldHNcLzYxXC83Mzc5MVwvOTdjMzg0ZWNkZGI5YjcyZjllMTI2ZTY5MzEyNzhiZTYtMTY1MDUzNjgyNi5wbmcifQ:lottoland:ob7WOPaNijk919eKGrEIVqDjn2sQtBDcn-K-BMCnufY?width=320&type=png",
+    image: bingoFallbackImages[1],
     playUrl: "https://beta.lottoland.co.uk/bingo"
   },
   {
@@ -546,7 +672,239 @@ const fallbackGames = [
     source: "bingo",
     name: "Hype - Drop Pots",
     provider: "Bingo",
-    image: "https://cdn-assets-eu.frontify.com/s3/frontify-enterprise-files-eu/eyJvYXV0aCI6eyJjbGllbnRfaWQiOiJjbGllbnQtZmhweXV6cXNtcm8xYm56NiJ9LCJwYXRoIjoibG90dG9sYW5kXC9hY2NvdW50c1wvMDlcLzQwMDA4MzBcL3Byb2plY3RzXC83XC9hc3NldHNcL2EwXC83Mzc4OVwvYmRmNzExODdiODRlZjM5MjAzZGMxZGIyZTkzYTZiYTYtMTY1MDUzNjgyNi5wbmcifQ:lottoland:qd4B52vr6FaNTWEmcbwhwbvkmf1xcD7gMnxn0BxVfUw?width=320&type=png",
+    image: bingoFallbackImages[2],
+    playUrl: "https://beta.lottoland.co.uk/bingo"
+  },
+  {
+    id: "bingo-blast",
+    source: "bingo",
+    name: "Bingo Blast",
+    provider: "Bingo",
+    image: bingoFallbackImages[0],
+    playUrl: "https://beta.lottoland.co.uk/bingo"
+  },
+  {
+    id: "diamond-dazzle",
+    source: "bingo",
+    name: "Diamond Dazzle",
+    provider: "Bingo",
+    image: bingoFallbackImages[1],
+    playUrl: "https://beta.lottoland.co.uk/bingo"
+  },
+  {
+    id: "laughter-bingo",
+    source: "bingo",
+    name: "Laughter Bingo",
+    provider: "Bingo",
+    image: bingoFallbackImages[2],
+    playUrl: "https://beta.lottoland.co.uk/bingo"
+  },
+  {
+    id: "chill-bingo",
+    source: "bingo",
+    name: "Chill Bingo",
+    provider: "Bingo",
+    image: bingoFallbackImages[0],
+    playUrl: "https://beta.lottoland.co.uk/bingo"
+  },
+  {
+    id: "energy-bingo",
+    source: "bingo",
+    name: "Energy Bingo",
+    provider: "Bingo",
+    image: bingoFallbackImages[1],
+    playUrl: "https://beta.lottoland.co.uk/bingo"
+  },
+  {
+    id: "sparkle-bingo",
+    source: "bingo",
+    name: "Sparkle Bingo",
+    provider: "Bingo",
+    image: bingoFallbackImages[2],
+    playUrl: "https://beta.lottoland.co.uk/bingo"
+  },
+  {
+    id: "rainbow-bingo",
+    source: "bingo",
+    name: "Rainbow Bingo",
+    provider: "Bingo",
+    image: bingoFallbackImages[0],
+    playUrl: "https://beta.lottoland.co.uk/bingo"
+  },
+  {
+    id: "fishin-frenzy-even-bigger-fish",
+    source: "casino",
+    name: "Fishin' Frenzy Even Bigger Fish",
+    provider: "Blueprint",
+    image: officialGameImage("FishinFrenzyEvenBiggerFish"),
+    playUrl: "https://beta.lottoland.co.uk/casino"
+  },
+  {
+    id: "big-catch-even-bigger-bass",
+    source: "casino",
+    name: "Big Catch Even Bigger Bass",
+    provider: "Blueprint",
+    image: officialGameImage("BigCatchEvenBiggerBass"),
+    playUrl: "https://beta.lottoland.co.uk/casino"
+  },
+  {
+    id: "cash-strike-hotstepper",
+    source: "casino",
+    name: "Cash Strike Hotstepper",
+    provider: "Blueprint",
+    image: officialGameImage("CashStrikeHotstepper"),
+    playUrl: "https://beta.lottoland.co.uk/casino"
+  },
+  {
+    id: "luxor-cleopatra",
+    source: "casino",
+    name: "Luxor Cleopatra",
+    provider: "Pragmatic",
+    image: officialGameImage("LuxorCleopatra"),
+    playUrl: "https://beta.lottoland.co.uk/casino"
+  },
+  {
+    id: "crabbys-gold-ii",
+    source: "casino",
+    name: "Crabby's Gold II",
+    provider: "Red Tiger",
+    image: officialGameImage("CrabbysGoldII"),
+    playUrl: "https://beta.lottoland.co.uk/casino"
+  },
+  {
+    id: "piggy-riches-megaways",
+    source: "casino",
+    name: "Piggy Riches Megaways",
+    provider: "Red Tiger",
+    image: officialGameImage("PiggyRichesMegaways"),
+    playUrl: "https://beta.lottoland.co.uk/casino"
+  },
+  {
+    id: "railroad-robbery",
+    source: "casino",
+    name: "Railroad Robbery",
+    provider: "Relax",
+    image: officialGameImage("RailroadRobbery"),
+    playUrl: "https://beta.lottoland.co.uk/casino"
+  },
+  {
+    id: "brawl-gods",
+    source: "casino",
+    name: "Brawl Gods",
+    provider: "Hacksaw",
+    image: officialGameImage("BrawlGods"),
+    playUrl: "https://beta.lottoland.co.uk/casino"
+  },
+  {
+    id: "crazy-time",
+    source: "live",
+    name: "Crazy Time",
+    provider: "Evolution",
+    image: officialGameImage("CrazyTime"),
+    playUrl: "https://beta.lottoland.co.uk/live-casino"
+  },
+  {
+    id: "monopoly-live",
+    source: "live",
+    name: "Monopoly Live",
+    provider: "Evolution",
+    image: officialGameImage("MonopolyLive"),
+    playUrl: "https://beta.lottoland.co.uk/live-casino"
+  },
+  {
+    id: "mega-ball",
+    source: "live",
+    name: "Mega Ball",
+    provider: "Evolution",
+    image: officialGameImage("MegaBall"),
+    playUrl: "https://beta.lottoland.co.uk/live-casino"
+  },
+  {
+    id: "infinite-blackjack",
+    source: "live",
+    name: "Infinite Blackjack",
+    provider: "Evolution",
+    image: officialGameImage("InfiniteBlackjack"),
+    playUrl: "https://beta.lottoland.co.uk/live-casino"
+  },
+  {
+    id: "free-bet-blackjack",
+    source: "live",
+    name: "Free Bet Blackjack",
+    provider: "Evolution",
+    image: officialGameImage("FreeBetBlackjack"),
+    playUrl: "https://beta.lottoland.co.uk/live-casino"
+  },
+  {
+    id: "immersive-roulette",
+    source: "live",
+    name: "Immersive Roulette",
+    provider: "Evolution",
+    image: officialGameImage("ImmersiveRoulette"),
+    playUrl: "https://beta.lottoland.co.uk/live-casino"
+  },
+  {
+    id: "bingo-bonanza",
+    source: "bingo",
+    name: "Bingo Bonanza",
+    provider: "Bingo",
+    image: bingoFallbackImages[1],
+    playUrl: "https://beta.lottoland.co.uk/bingo"
+  },
+  {
+    id: "club-bingo",
+    source: "bingo",
+    name: "Club Bingo",
+    provider: "Bingo",
+    image: bingoFallbackImages[2],
+    playUrl: "https://beta.lottoland.co.uk/bingo"
+  },
+  {
+    id: "lucky-stars-bingo",
+    source: "bingo",
+    name: "Lucky Stars Bingo",
+    provider: "Bingo",
+    image: bingoFallbackImages[0],
+    playUrl: "https://beta.lottoland.co.uk/bingo"
+  },
+  {
+    id: "cash-cubes-bingo",
+    source: "bingo",
+    name: "Cash Cubes Bingo",
+    provider: "Bingo",
+    image: bingoFallbackImages[1],
+    playUrl: "https://beta.lottoland.co.uk/bingo"
+  },
+  {
+    id: "wonder-bingo",
+    source: "bingo",
+    name: "Wonder Bingo",
+    provider: "Bingo",
+    image: bingoFallbackImages[2],
+    playUrl: "https://beta.lottoland.co.uk/bingo"
+  },
+  {
+    id: "bingo-royale",
+    source: "bingo",
+    name: "Bingo Royale",
+    provider: "Bingo",
+    image: bingoFallbackImages[0],
+    playUrl: "https://beta.lottoland.co.uk/bingo"
+  },
+  {
+    id: "bingo-night",
+    source: "bingo",
+    name: "Bingo Night",
+    provider: "Bingo",
+    image: bingoFallbackImages[1],
+    playUrl: "https://beta.lottoland.co.uk/bingo"
+  },
+  {
+    id: "bingo-party",
+    source: "bingo",
+    name: "Bingo Party",
+    provider: "Bingo",
+    image: bingoFallbackImages[2],
     playUrl: "https://beta.lottoland.co.uk/bingo"
   }
 ];
@@ -1455,23 +1813,138 @@ async function saveBuilderState() {
 function normaliseGames(games) {
   const seen = new Set();
   return games
-    .filter((game) => game?.name && game?.playUrl)
     .map((game) => {
-      const source = game.source || "casino";
+      if (!game) return null;
+      const source = normaliseGameSource(game);
+      const name = game.displayName || game.title || game.gameName || game.name;
+      if (!name) return null;
+      const id = game.id || game.slug || game.gameId || game.code || slugifyText(name);
+      const route =
+        game.playUrl ||
+        game.url ||
+        game.href ||
+        game.launchUrl ||
+        game.gameUrl ||
+        game.path ||
+        `/${source === "live" ? "live-casino" : source}`;
       return {
         ...game,
-        name: game.displayName || game.title || game.gameName || game.name,
-        image: game.image || game.imageUrl || game.thumbnail || game.thumbnailUrl || game.logo || "",
-        playUrl: new URL(game.playUrl, "https://beta.lottoland.co.uk").href,
+        id,
+        name,
+        image: pickGameImage(game),
+        playUrl: new URL(route, "https://beta.lottoland.co.uk").href,
         source,
         provider: game.provider || game.studio || game.supplier || SOURCE_LABELS[source] || "Game"
       };
     })
+    .filter(Boolean)
     .filter((game) => {
       if (seen.has(game.id)) return false;
       seen.add(game.id);
       return true;
     });
+}
+
+function normaliseGameSource(game) {
+  const searchable = [
+    game.source,
+    game.category,
+    game.type,
+    game.vertical,
+    game.product,
+    game.playUrl,
+    game.url,
+    game.href,
+    game.launchUrl,
+    game.gameUrl,
+    game.path
+  ]
+    .filter(Boolean)
+    .join(" ")
+    .toLowerCase();
+
+  if (searchable.includes("bingo")) return "bingo";
+  if (searchable.includes("live")) return "live";
+  return game.source || "casino";
+}
+
+function pickGameImage(game) {
+  const candidates = [
+    game.image,
+    game.imageUrl,
+    game.thumbnail,
+    game.thumbnailUrl,
+    game.logo,
+    game.background,
+    game.backgroundImage,
+    game.coverImage,
+    game.poster,
+    game.icon,
+    game.tileImage,
+    game.assets,
+    game.images,
+    game.media
+  ];
+
+  for (const candidate of candidates) {
+    const imageUrl = extractGameImageUrl(candidate);
+    if (imageUrl) return imageUrl;
+  }
+  return "";
+}
+
+function extractGameImageUrl(candidate) {
+  if (!candidate) return "";
+  if (typeof candidate === "string") return absoluteGameAssetUrl(candidate);
+  if (Array.isArray(candidate)) {
+    for (const item of candidate) {
+      const imageUrl = extractGameImageUrl(item);
+      if (imageUrl) return imageUrl;
+    }
+    return "";
+  }
+  if (typeof candidate === "object") {
+    const nestedCandidates = [
+      candidate.url,
+      candidate.src,
+      candidate.href,
+      candidate.path,
+      candidate.image,
+      candidate.imageUrl,
+      candidate.thumbnail,
+      candidate.thumbnailUrl,
+      candidate.logo,
+      candidate.background,
+      candidate.backgroundImage,
+      candidate.cover,
+      candidate.default,
+      candidate.small,
+      candidate.medium,
+      candidate.large
+    ];
+    for (const nestedCandidate of nestedCandidates) {
+      const imageUrl = extractGameImageUrl(nestedCandidate);
+      if (imageUrl) return imageUrl;
+    }
+  }
+  return "";
+}
+
+function absoluteGameAssetUrl(value) {
+  try {
+    return new URL(value, "https://beta.lottoland.co.uk").href;
+  } catch (error) {
+    return "";
+  }
+}
+
+function slugifyText(value) {
+  return String(value || "")
+    .trim()
+    .toLowerCase()
+    .replace(/&/g, "and")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "") || "game";
 }
 
 function renderSite() {
@@ -1484,6 +1957,7 @@ function renderSite() {
     buildLobbyGroups(casinoGames.length ? casinoGames : currentGames, {
       leadTitle: siteLanguage === "es" ? "Favoritos destacados" : "Featured favourites",
       analyticsTitle: "Featured favourites",
+      source: "casino",
       limit: 4
     })
   );
@@ -1492,6 +1966,7 @@ function renderSite() {
     buildLobbyGroups(liveGames.length ? liveGames : currentGames, {
       leadTitle: siteLanguage === "es" ? "Favoritos en vivo" : "Live favourites",
       analyticsTitle: "Live favourites",
+      source: "live",
       limit: 4
     })
   );
@@ -1500,14 +1975,15 @@ function renderSite() {
     buildLobbyGroups(bingoGames.length ? bingoGames : currentGames, {
       leadTitle: siteLanguage === "es" ? "Favoritos de bingo" : "Bingo favourites",
       analyticsTitle: "Bingo favourites",
+      source: "bingo",
       limit: 4
     })
   );
   renderBuilder();
 }
 
-function buildLobbyGroups(games, { leadTitle, analyticsTitle, limit }) {
-  const imageFirst = sortImageFirst(games);
+function buildLobbyGroups(games, { leadTitle, analyticsTitle, limit, source }) {
+  const imageFirst = uniqueGames(sortImageFirst(games));
   const groups = [
     {
       title: leadTitle,
@@ -1515,6 +1991,8 @@ function buildLobbyGroups(games, { leadTitle, analyticsTitle, limit }) {
       games: imageFirst.slice(0, 18)
     }
   ];
+
+  buildThemeLobbyGroups(imageFirst, source).forEach((group) => groups.push(group));
 
   groupByProvider(imageFirst)
     .slice(0, limit)
@@ -1526,7 +2004,39 @@ function buildLobbyGroups(games, { leadTitle, analyticsTitle, limit }) {
       });
     });
 
-  return groups.filter((group) => group.games.length);
+  return uniqueLobbyGroups(groups).filter((group) => group.games.length);
+}
+
+function buildThemeLobbyGroups(games, source) {
+  const groupsBySource = {
+    casino: [
+      ["Big win picks", /big|bass|gates|777|strike|book|gold|fish|catch|jackpot/i],
+      ["New casino games", /aliens|double|shark|luxor|crabby|railroad|piggy|brawl/i],
+      ["Slot favourites", /./]
+    ],
+    live: [
+      ["Table classics", /blackjack|baccarat|hold.?em|dragon/i],
+      ["Roulette and game shows", /roulette|dream|crazy|monopoly|mega|game show/i],
+      ["Live dealer favourites", /./]
+    ],
+    bingo: [
+      ["Top bingo rooms", /./],
+      ["Bingo bonuses", /bonus|boost|drop|cash|powerful|diamond|sparkle/i],
+      ["Open rooms", /bingo|room|club|night|party/i]
+    ]
+  };
+
+  return (groupsBySource[source] || [])
+    .map(([title, matcher]) => {
+      const matched = games.filter((game) => matcher.test(`${game.name} ${game.provider}`));
+      if (!matched.length) return null;
+      return {
+        title,
+        analyticsTitle: title,
+        games: uniqueGames(sortImageFirst(matched.concat(games))).slice(0, 18)
+      };
+    })
+    .filter(Boolean);
 }
 
 function groupByProvider(games) {
@@ -1545,6 +2055,26 @@ function sortImageFirst(games) {
   return games
     .filter((game) => game.image)
     .concat(games.filter((game) => !game.image));
+}
+
+function uniqueGames(games) {
+  const seen = new Set();
+  return games.filter((game) => {
+    const key = game.id || game.name;
+    if (!key || seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
+
+function uniqueLobbyGroups(groups) {
+  const seen = new Set();
+  return groups.filter((group) => {
+    const key = group.title.toLowerCase();
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
 }
 
 function renderLobbyGroups(name, groups) {
