@@ -53,9 +53,10 @@ const PLAYAI_BACKLOG_API_URL = `${PLAYAI_API_BASE}/api/backlog`;
 const LOTTERY_HELPER_DISMISSED_KEY = "impossibleLotteryHelperDismissed";
 const SITE_LANGUAGE_KEY = "impossibleSiteLanguage";
 const OFFER_EXPERIMENT_INDEX_KEY = "impossibleOfferExperimentIndex";
-const CATALOGUE_CACHE_VERSION = 8;
+const CATALOGUE_CACHE_VERSION = 12;
 const CATALOGUE_SOURCE_URL = "data/lottoland-game-catalogue.json";
 const CATALOGUE_CACHE_MAX_AGE_MS = 1000 * 60 * 60 * 24 * 30;
+const CATALOGUE_MIN_EXPECTED_GAMES = 500;
 const PLAYAI_ROUTES = new Set([
   "ai-backlog",
   "ai-markets",
@@ -1727,7 +1728,9 @@ async function loadGames({ force = false } = {}) {
 }
 
 async function requestStaticCatalogue() {
-  const response = await fetch(CATALOGUE_SOURCE_URL, { cache: "no-cache" });
+  const response = await fetch(`${CATALOGUE_SOURCE_URL}?v=${CATALOGUE_CACHE_VERSION}`, {
+    cache: "no-store"
+  });
   if (!response.ok) {
     throw new Error(`Catalogue file unavailable (${response.status}).`);
   }
@@ -1769,7 +1772,10 @@ async function readCachedGames() {
   const cached = stored.impossibleCatalogue;
   if (!cached || Date.now() - cached.updatedAt > CATALOGUE_CACHE_MAX_AGE_MS) return null;
   if (cached.version !== CATALOGUE_CACHE_VERSION) return null;
-  return Array.isArray(cached.games) ? cached.games : null;
+  if (!Array.isArray(cached.games) || cached.games.length < CATALOGUE_MIN_EXPECTED_GAMES) {
+    return null;
+  }
+  return cached.games;
 }
 
 async function cacheGames(games) {
@@ -2093,30 +2099,47 @@ function renderSite() {
 
 function buildLobbyGroups(games, { leadTitle, analyticsTitle, limit, source }) {
   const imageFirst = uniqueGames(sortImageFirst(games));
-  const groups = [
-    {
-      title: leadTitle,
-      analyticsTitle,
-      games: imageFirst.slice(0, 18)
-    }
-  ];
+  const railSizeBySource = { casino: 18, live: 14, bingo: 6 };
+  const groupLimitBySource = { casino: limit, live: limit, bingo: Math.min(limit, 3) };
+  const railSize = railSizeBySource[source] || 18;
+  const targetGroupCount = groupLimitBySource[source] || limit;
+  const usedGames = new Set();
+  const groups = [];
 
-  buildThemeLobbyGroups(imageFirst, source).forEach((group) => groups.push(group));
-
-  groupByProvider(imageFirst)
-    .slice(0, limit)
-    .forEach(([provider, providerGames]) => {
-      groups.push({
-        title: provider,
-        analyticsTitle: provider,
-        games: uniqueGames(providerGames).slice(0, 18)
-      });
+  function addGroup(title, groupAnalyticsTitle, candidateGames) {
+    if (groups.length >= targetGroupCount) return;
+    const selectedGames = takeUnusedGames(candidateGames, usedGames, railSize);
+    if (!selectedGames.length) return;
+    groups.push({
+      title,
+      analyticsTitle: groupAnalyticsTitle,
+      games: selectedGames
     });
+  }
+
+  addGroup(leadTitle, analyticsTitle, imageFirst);
+
+  buildThemeLobbyGroupSpecs(source).forEach(([title, matcher]) => {
+    const matched = imageFirst.filter((game) => matcher.test(`${game.name} ${game.provider}`));
+    addGroup(title, title, matched.length ? matched : imageFirst);
+  });
+
+  groupByProvider(imageFirst).forEach(([provider, providerGames]) => {
+    addGroup(provider, provider, providerGames);
+  });
+
+  let fallbackIndex = groups.length + 1;
+  while (groups.length < targetGroupCount) {
+    const beforeCount = groups.length;
+    addGroup(`${leadTitle} ${fallbackIndex}`, `${analyticsTitle} ${fallbackIndex}`, imageFirst);
+    if (groups.length === beforeCount) break;
+    fallbackIndex += 1;
+  }
 
   return uniqueLobbyGroups(groups).filter((group) => group.games.length);
 }
 
-function buildThemeLobbyGroups(games, source) {
+function buildThemeLobbyGroupSpecs(source) {
   const groupsBySource = {
     casino: [
       ["Big win picks", /big|bass|gates|777|strike|book|gold|fish|catch|jackpot/i],
@@ -2135,17 +2158,36 @@ function buildThemeLobbyGroups(games, source) {
     ]
   };
 
-  return (groupsBySource[source] || [])
-    .map(([title, matcher]) => {
-      const matched = games.filter((game) => matcher.test(`${game.name} ${game.provider}`));
-      if (!matched.length) return null;
-      return {
-        title,
-        analyticsTitle: title,
-        games: uniqueGames(sortImageFirst(matched.concat(games))).slice(0, 18)
-      };
-    })
-    .filter(Boolean);
+  return groupsBySource[source] || [];
+}
+
+function takeUnusedGames(games, usedGames, limit) {
+  const selectedGames = [];
+  const selectedKeys = new Set();
+  uniqueGames(sortImageFirst(games)).forEach((game) => {
+    if (selectedGames.length >= limit) return;
+    const keys = lobbyGameDedupeKeys(game);
+    if (!keys.length || keys.some((key) => usedGames.has(key) || selectedKeys.has(key))) return;
+    keys.forEach((key) => {
+      usedGames.add(key);
+      selectedKeys.add(key);
+    });
+    selectedGames.push(game);
+  });
+  return selectedGames;
+}
+
+function lobbyGameDedupeKeys(game) {
+  const keys = [];
+  const idKey = uniqueGameKey(game);
+  if (idKey) keys.push(idKey);
+
+  const source = String(game.source || normaliseGameSource(game) || "game").trim().toLowerCase();
+  const provider = String(game.provider || "").trim().toLowerCase();
+  const name = String(game.name || game.title || "").trim().toLowerCase();
+  if (name) keys.push(`${source}:${provider}:${name}`);
+
+  return keys;
 }
 
 function groupByProvider(games) {
@@ -2903,7 +2945,7 @@ function renderProviderOptions() {
 
 function renderLibrary() {
   if (!libraryList) return;
-  const games = filteredLibraryGames().slice(0, 120);
+  const games = filteredLibraryGames();
   libraryList.replaceChildren(...games.map(createLibraryCard));
   if (libraryCount) libraryCount.textContent = gameCountLabel(games.length);
   if (builderState.search.trim() && !games.length) {
