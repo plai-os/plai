@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 720" role="img" aria-label="Dark Technical Impossible Casino hero asset">
+  <defs>
+    <radialGradient id="halo" cx="50%" cy="42%" r="56%">
+      <stop offset="0" stop-color="#16d9ff" stop-opacity=".42"/>
+      <stop offset=".45" stop-color="#8b5cf6" stop-opacity=".2"/>
+      <stop offset="1" stop-color="#07101f" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="tri" x1="240" x2="720" y1="120" y2="610">
+      <stop offset="0" stop-color="#67e8ff"/>
+      <stop offset=".48" stop-color="#f4fbff"/>
+      <stop offset="1" stop-color="#8b5cf6"/>
+    </linearGradient>
+    <filter id="softGlow" x="-40%" y="-40%" width="180%" height="180%">
+      <feGaussianBlur stdDeviation="10" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+  <rect width="960" height="720" rx="54" fill="#07101f"/>
+  <path d="M0 60h960M0 120h960M0 180h960M0 240h960M0 300h960M0 360h960M0 420h960M0 480h960M0 540h960M0 600h960M0 660h960M60 0v720M120 0v720M180 0v720M240 0v720M300 0v720M360 0v720M420 0v720M480 0v720M540 0v720M600 0v720M660 0v720M720 0v720M780 0v720M840 0v720M900 0v720" stroke="#67e8ff" stroke-opacity=".08" stroke-width="2"/>
+  <circle cx="480" cy="360" r="330" fill="url(#halo)"/>
+  <g filter="url(#softGlow)">
+    <path d="M480 92 750 565H210L480 92Z" fill="none" stroke="#67e8ff" stroke-width="34" stroke-linejoin="round"/>
+    <path d="M480 92 750 565H612L480 336 348 565H210L480 92Z" fill="none" stroke="#8b5cf6" stroke-width="20" stroke-linejoin="round"/>
+    <path d="M348 565h264L480 336 348 565Z" fill="#07101f" stroke="url(#tri)" stroke-width="12" stroke-linejoin="round"/>
+  </g>
+  <circle cx="725" cy="176" r="34" fill="#16d9ff" opacity=".72"/>
+  <circle cx="230" cy="536" r="26" fill="#8b5cf6" opacity=".62"/>
+  <path d="M778 248l12 31 31 12-31 12-12 31-12-31-31-12 31-12 12-31Z" fill="#f4fbff"/>
+  <path d="M176 180l8 20 20 8-20 8-8 20-8-20-20-8 20-8 8-20Z" fill="#67e8ff"/>
+</svg>

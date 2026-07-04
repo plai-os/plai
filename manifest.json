@@ -1,0 +1,24 @@
+{
+  "manifest_version": 3,
+  "name": "Plai Workspace",
+  "version": "2.3.0",
+  "description": "Launch the Plai workspace and compose market-ready casino experiences from live catalogue data.",
+  "permissions": [
+    "activeTab",
+    "scripting",
+    "storage",
+    "tabs"
+  ],
+  "host_permissions": [
+    "https://beta.lottoland.co.uk/*"
+  ],
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'self'; img-src 'self' data: https:; connect-src 'self' https://beta.lottoland.co.uk;"
+  },
+  "action": {
+    "default_title": "Open Plai Workspace"
+  },
+  "background": {
+    "service_worker": "background.js"
+  }
+}

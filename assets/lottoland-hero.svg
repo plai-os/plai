@@ -1,0 +1,95 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 720" role="img" aria-label="Lottoland promotional hero with player and colourful games">
+  <defs>
+    <linearGradient id="bg" x1="0" x2="1" y1="0" y2="1">
+      <stop offset="0" stop-color="#050b2d"/>
+      <stop offset=".58" stop-color="#071356"/>
+      <stop offset="1" stop-color="#111c49"/>
+    </linearGradient>
+    <linearGradient id="green" x1="0" x2="1">
+      <stop offset="0" stop-color="#79ff9f"/>
+      <stop offset="1" stop-color="#35f773"/>
+    </linearGradient>
+    <linearGradient id="pink" x1="0" x2="1">
+      <stop offset="0" stop-color="#ff2c8b"/>
+      <stop offset="1" stop-color="#b900f3"/>
+    </linearGradient>
+    <linearGradient id="skin" x1="0" x2="1" y1="0" y2="1">
+      <stop offset="0" stop-color="#ffd2ae"/>
+      <stop offset="1" stop-color="#b76b4e"/>
+    </linearGradient>
+    <linearGradient id="jacket" x1="0" x2="1" y1="0" y2="1">
+      <stop offset="0" stop-color="#c57a5b"/>
+      <stop offset="1" stop-color="#74412f"/>
+    </linearGradient>
+    <filter id="shadow" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="20" stdDeviation="18" flood-color="#000820" flood-opacity=".45"/>
+    </filter>
+    <filter id="glow" x="-60%" y="-60%" width="220%" height="220%">
+      <feGaussianBlur stdDeviation="8" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+  <rect width="960" height="720" rx="42" fill="url(#bg)"/>
+  <path d="M80 460c112-164 286-222 430-158 124 55 216 31 342-76v312H80z" fill="#1f2c66" opacity=".62"/>
+  <path d="M126 360c144-150 358-164 558-44" fill="none" stroke="#b900f3" stroke-width="108" stroke-linecap="round" opacity=".95"/>
+  <path d="M110 420c152-134 430-148 646-16" fill="none" stroke="#35f773" stroke-width="18" stroke-linecap="round" opacity=".9"/>
+  <g fill="#35f773" filter="url(#glow)">
+    <path d="M90 158l18 7 7 18 7-18 18-7-18-7-7-18-7 18z"/>
+    <path d="M805 118l24 9 9 24 9-24 24-9-24-9-9-24-9 24z"/>
+    <path d="M822 500l20 8 8 20 8-20 20-8-20-8-8-20-8 20z"/>
+  </g>
+  <g transform="translate(598 118)" filter="url(#shadow)">
+    <rect x="98" y="0" width="178" height="154" rx="28" fill="#35f773" transform="rotate(7 187 77)"/>
+    <rect x="112" y="14" width="150" height="126" rx="20" fill="#80e8ff" transform="rotate(7 187 77)"/>
+    <path d="M114 122c56-31 100-29 148-4v27H112z" fill="#0d6d9b" opacity=".55"/>
+    <text x="132" y="56" fill="#ff6a00" font-family="Inter, Arial, sans-serif" font-size="23" font-weight="1000" transform="rotate(7 187 77)">FISHIN'</text>
+    <text x="124" y="86" fill="#ff3b2f" font-family="Inter, Arial, sans-serif" font-size="23" font-weight="1000" transform="rotate(7 187 77)">FRENZY</text>
+    <text x="139" y="118" fill="#ff7a00" font-family="Inter, Arial, sans-serif" font-size="32" font-weight="1000" transform="rotate(7 187 77)">BIGGER</text>
+  </g>
+  <g transform="translate(250 75)" filter="url(#shadow)">
+    <ellipse cx="238" cy="456" rx="220" ry="30" fill="#000820" opacity=".28"/>
+    <g opacity=".95">
+      <circle cx="42" cy="338" r="26" fill="#36d6c9"/>
+      <circle cx="78" cy="398" r="30" fill="#ff4a39"/>
+      <circle cx="126" cy="350" r="24" fill="#ffd041"/>
+      <circle cx="394" cy="342" r="26" fill="#49e28a"/>
+      <circle cx="440" cy="404" r="32" fill="#ffc447"/>
+      <circle cx="476" cy="318" r="22" fill="#2fd9ff"/>
+      <circle cx="520" cy="386" r="24" fill="#ff4a39"/>
+      <g fill="none" stroke="#050b2d" stroke-width="3" opacity=".45">
+        <path d="M24 338h36M42 320v36M60 386l36 20M398 324l38 38M420 404h40M506 370l28 30"/>
+      </g>
+    </g>
+    <path d="M169 215c-22 62-40 127-30 192h210c13-65-3-134-33-194z" fill="url(#jacket)"/>
+    <path d="M164 256c-44 42-85 94-104 158l66 22c18-48 46-86 82-116z" fill="url(#jacket)"/>
+    <path d="M325 256c60 34 101 84 120 150l-65 24c-15-47-46-85-92-112z" fill="url(#jacket)"/>
+    <path d="M188 166c-21 29-18 86 9 111 33 30 94 28 123-4 25-27 24-84 2-109-31-35-101-35-134 2z" fill="url(#skin)"/>
+    <path d="M180 158c20-50 104-72 150-24 20 21 27 50 21 86-23-26-54-38-94-34-37 4-62-5-77-28z" fill="#211522"/>
+    <path d="M172 190c-8 44 1 79 27 106-45-16-68-53-62-101 5-44 32-75 78-90-24 24-38 52-43 85z" fill="#211522"/>
+    <ellipse cx="205" cy="214" rx="8" ry="6" fill="#050b2d"/>
+    <ellipse cx="291" cy="214" rx="8" ry="6" fill="#050b2d"/>
+    <path d="M223 202c-17-5-31-2-43 9M272 200c17-7 34-5 49 6" fill="none" stroke="#050b2d" stroke-width="5" stroke-linecap="round"/>
+    <path d="M238 236c7 8 18 8 28 0" fill="none" stroke="#7f3d39" stroke-width="5" stroke-linecap="round"/>
+    <rect x="142" y="302" width="196" height="128" rx="22" fill="#101b44" transform="rotate(-8 240 366)"/>
+    <rect x="158" y="316" width="164" height="94" rx="16" fill="#273879" transform="rotate(-8 240 366)"/>
+    <circle cx="248" cy="366" r="10" fill="#35f773"/>
+    <path d="M126 404c70 34 154 34 232 0" fill="none" stroke="#ffd2ae" stroke-width="34" stroke-linecap="round"/>
+    <path d="M174 410c45 20 94 19 145-2" fill="none" stroke="#b76b4e" stroke-width="6" opacity=".28"/>
+  </g>
+  <g transform="translate(80 575)">
+    <text x="0" y="0" fill="#ffffff" font-family="Inter, Arial, sans-serif" font-size="34" font-weight="900">Deposit and Stake</text>
+    <text x="0" y="48" fill="#ffffff" font-family="Inter, Arial, sans-serif" font-size="34" font-weight="900">£20 to Get 100 Free Spins</text>
+    <rect x="0" y="74" width="92" height="42" rx="21" fill="url(#green)"/>
+    <text x="29" y="102" fill="#050b2d" font-family="Inter, Arial, sans-serif" font-size="18" font-weight="900">Join</text>
+  </g>
+  <g opacity=".95">
+    <circle cx="167" cy="225" r="22" fill="#ffffff"/>
+    <path d="M153 212l28 26M181 212l-28 26" stroke="#050b2d" stroke-width="5"/>
+    <circle cx="722" cy="514" r="17" fill="#35f773"/>
+    <circle cx="690" cy="468" r="10" fill="#ffd041"/>
+    <circle cx="132" cy="430" r="11" fill="#ff4a39"/>
+  </g>
+</svg>

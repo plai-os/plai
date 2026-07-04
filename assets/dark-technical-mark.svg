@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 320" role="img" aria-label="Dark Technical Impossible Casino mark">
+  <defs>
+    <radialGradient id="bg" cx="50%" cy="42%" r="68%">
+      <stop offset="0" stop-color="#123b5f"/>
+      <stop offset=".58" stop-color="#0d2846"/>
+      <stop offset="1" stop-color="#07101f"/>
+    </radialGradient>
+    <linearGradient id="edge" x1="48" x2="272" y1="46" y2="276">
+      <stop offset="0" stop-color="#67e8ff"/>
+      <stop offset=".52" stop-color="#8b5cf6"/>
+      <stop offset="1" stop-color="#16d9ff"/>
+    </linearGradient>
+    <filter id="glow" x="-40%" y="-40%" width="180%" height="180%">
+      <feGaussianBlur stdDeviation="6" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+  <rect width="320" height="320" rx="76" fill="#07101f"/>
+  <path d="M0 32h320M0 80h320M0 128h320M0 176h320M0 224h320M0 272h320M32 0v320M80 0v320M128 0v320M176 0v320M224 0v320M272 0v320" stroke="#67e8ff" stroke-opacity=".08" stroke-width="2"/>
+  <circle cx="160" cy="160" r="116" fill="url(#bg)" stroke="url(#edge)" stroke-width="7"/>
+  <circle cx="160" cy="160" r="95" fill="none" stroke="#67e8ff" stroke-opacity=".22" stroke-width="2"/>
+  <g filter="url(#glow)">
+    <path d="M160 66 249 220H71L160 66Z" fill="none" stroke="#67e8ff" stroke-width="18" stroke-linejoin="round"/>
+    <path d="M160 66 249 220h-45L160 143 116 220H71L160 66Z" fill="none" stroke="#8b5cf6" stroke-width="10" stroke-linejoin="round"/>
+    <path d="M116 220h88l-44-77-44 77Z" fill="#07101f" stroke="#f4fbff" stroke-opacity=".72" stroke-width="5" stroke-linejoin="round"/>
+  </g>
+  <path d="M252 64l8 21 21 8-21 8-8 21-8-21-21-8 21-8 8-21Z" fill="#67e8ff"/>
+  <path d="M69 237l5 13 13 5-13 5-5 13-5-13-13-5 13-5 5-13Z" fill="#8b5cf6"/>
+</svg>
