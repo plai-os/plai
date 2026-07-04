@@ -75,14 +75,19 @@ async function scrapeCataloguePage({ path, source, selector }) {
     await waitForTabComplete(tab.id);
     const [execution] = await chrome.scripting.executeScript({
       target: { tabId: tab.id },
-      args: [source, selector],
-      func: async (sourceName, containerName) => {
-        const selectorText =
-          `[data-track-container="${containerName}"][data-track-game-id]`;
+      args: [source, selector, path],
+      func: async (sourceName, containerName, sourcePath) => {
+        const selectorText = `[data-track-game-id]`;
         for (let attempt = 0; attempt < 40; attempt += 1) {
           if (document.querySelector(selectorText)) break;
           await new Promise((resolve) => setTimeout(resolve, 250));
         }
+
+        for (let attempt = 0; attempt < 14; attempt += 1) {
+          window.scrollTo(0, document.body.scrollHeight);
+          await new Promise((resolve) => setTimeout(resolve, 350));
+        }
+        window.scrollTo(0, 0);
 
         const games = new Map();
         const cleanText = (value) => (value || "").replace(/\s+/g, " ").trim();
@@ -187,15 +192,25 @@ async function scrapeCataloguePage({ path, source, selector }) {
           );
         };
 
+        const sourcePathMatch = (node) => {
+          const href =
+            node.querySelector("a[href]")?.getAttribute("href") ||
+            node.closest("a[href]")?.getAttribute("href") ||
+            "";
+          const combined = `${href} ${node.getAttribute("data-track-container") || ""} ${node.getAttribute("data-track-product") || ""} ${node.getAttribute("data-track-category") || ""}`.toLowerCase();
+          if (sourceName === "live") return combined.includes("live") || combined.includes("blackjack") || combined.includes("roulette") || combined.includes("baccarat");
+          if (sourceName === "bingo") return combined.includes("bingo") || combined.includes("room");
+          return !combined.includes("bingo") && !combined.includes("sports");
+        };
+
         document.querySelectorAll(selectorText).forEach((node) => {
           const rawId = node.getAttribute("data-track-game-id");
-          if (!rawId) return;
+          if (!rawId || !sourcePathMatch(node)) return;
           const internalId =
             sourceName === "casino" ? rawId : `${sourceName}:${rawId}`;
           const playLink =
-            node.querySelector('a[href*="/play"]') ||
-            node.closest('a[href*="/play"]');
-          if (!playLink) return;
+            node.querySelector('a[href*="/play"], a[href*="/casino"], a[href*="/live-casino"], a[href*="/bingo"]') ||
+            node.closest('a[href*="/play"], a[href*="/casino"], a[href*="/live-casino"], a[href*="/bingo"]');
 
           let category = node.getAttribute("data-track-game-type") || "";
           let current = node.parentElement;
@@ -214,7 +229,7 @@ async function scrapeCataloguePage({ path, source, selector }) {
             provider: providerFrom(node, sourceName === "bingo" ? "Bingo" : "Unknown"),
             categories: [category, schedule].filter(Boolean),
             image: imageFrom(node),
-            playUrl: playLink.getAttribute("href"),
+            playUrl: playLink?.getAttribute("href") || `${sourcePath}/${rawId}`,
             callout:
               node.getAttribute("data-track-game-callout-value") || ""
           });

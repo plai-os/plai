@@ -53,7 +53,7 @@ const PLAYAI_BACKLOG_API_URL = `${PLAYAI_API_BASE}/api/backlog`;
 const LOTTERY_HELPER_DISMISSED_KEY = "impossibleLotteryHelperDismissed";
 const SITE_LANGUAGE_KEY = "impossibleSiteLanguage";
 const OFFER_EXPERIMENT_INDEX_KEY = "impossibleOfferExperimentIndex";
-const CATALOGUE_CACHE_VERSION = 5;
+const CATALOGUE_CACHE_VERSION = 7;
 const PLAYAI_ROUTES = new Set([
   "ai-backlog",
   "ai-markets",
@@ -1738,7 +1738,7 @@ function requestGames() {
             reject(new Error(chrome.runtime.lastError.message));
             return;
           }
-          if (!response?.ok || !Array.isArray(response.games)) {
+          if (!response?.ok || !response.games) {
             reject(new Error(response?.error || "Catalogue request failed."));
             return;
           }
@@ -1810,23 +1810,118 @@ async function saveBuilderState() {
   });
 }
 
+function collectCatalogueGames(payload) {
+  const collected = [];
+  const visited = new Set();
+  const nestedKeys = /games|items|results|catalog|catalogue|entries|tiles|cards|sections|rails|products|rooms|nodes|data|content/i;
+
+  function visit(value, depth = 0) {
+    if (!value || depth > 8) return;
+    if (Array.isArray(value)) {
+      value.forEach((item) => visit(item, depth + 1));
+      return;
+    }
+    if (typeof value !== "object") return;
+    if (visited.has(value)) return;
+    visited.add(value);
+
+    if (isCatalogueGameCandidate(value)) {
+      collected.push(value);
+    }
+
+    Object.entries(value).forEach(([key, nested]) => {
+      if (nestedKeys.test(key)) {
+        visit(nested, depth + 1);
+      }
+    });
+  }
+
+  visit(payload);
+  return collected;
+}
+
+function isCatalogueGameCandidate(game) {
+  const name = getGameName(game);
+  if (!name) return false;
+  return Boolean(
+    game.provider ||
+      game.studio ||
+      game.supplier ||
+      game.vendor ||
+      game.playUrl ||
+      game.url ||
+      game.href ||
+      game.launchUrl ||
+      game.gameUrl ||
+      game.path ||
+      game.source ||
+      game.category ||
+      game.type ||
+      game.vertical ||
+      game.product ||
+      pickGameImage(game)
+  );
+}
+
+function getGameName(game) {
+  return (
+    game.displayName ||
+    game.title ||
+    game.gameName ||
+    game.name ||
+    game.label ||
+    game.content?.title ||
+    game.metadata?.title ||
+    ""
+  );
+}
+
+function getGameProvider(game, source) {
+  return (
+    game.provider ||
+    game.studio ||
+    game.supplier ||
+    game.vendor ||
+    game.metadata?.provider ||
+    game.content?.provider ||
+    SOURCE_LABELS[source] ||
+    "Game"
+  );
+}
+
+function getGameRoute(game, source) {
+  return (
+    game.playUrl ||
+    game.url ||
+    game.href ||
+    game.launchUrl ||
+    game.gameUrl ||
+    game.path ||
+    game.links?.play ||
+    game.links?.launch ||
+    `/${source === "live" ? "live-casino" : source}`
+  );
+}
+
+function uniqueGameKey(game) {
+  const name = getGameName(game) || game.name || "";
+  const provider = getGameProvider(game, game.source || "casino");
+  const nameKey = name ? slugifyText(name) : "";
+  const providerKey = provider ? slugifyText(provider) : "";
+  if (nameKey) return `${nameKey}|${providerKey}`;
+  return String(game.id || game.slug || game.gameId || game.code || "");
+}
+
 function normaliseGames(games) {
   const seen = new Set();
-  return games
+  return collectCatalogueGames(games)
     .map((game) => {
       if (!game) return null;
       const source = normaliseGameSource(game);
-      const name = game.displayName || game.title || game.gameName || game.name;
+      const name = getGameName(game);
       if (!name) return null;
       const id = game.id || game.slug || game.gameId || game.code || slugifyText(name);
-      const route =
-        game.playUrl ||
-        game.url ||
-        game.href ||
-        game.launchUrl ||
-        game.gameUrl ||
-        game.path ||
-        `/${source === "live" ? "live-casino" : source}`;
+      const route = getGameRoute(game, source);
       return {
         ...game,
         id,
@@ -1834,13 +1929,14 @@ function normaliseGames(games) {
         image: pickGameImage(game),
         playUrl: new URL(route, "https://beta.lottoland.co.uk").href,
         source,
-        provider: game.provider || game.studio || game.supplier || SOURCE_LABELS[source] || "Game"
+        provider: getGameProvider(game, source)
       };
     })
     .filter(Boolean)
     .filter((game) => {
-      if (seen.has(game.id)) return false;
-      seen.add(game.id);
+      const key = uniqueGameKey(game);
+      if (!key || seen.has(key)) return false;
+      seen.add(key);
       return true;
     });
 }
@@ -1865,7 +1961,7 @@ function normaliseGameSource(game) {
 
   if (searchable.includes("bingo")) return "bingo";
   if (searchable.includes("live")) return "live";
-  return game.source || "casino";
+  return "casino";
 }
 
 function pickGameImage(game) {
@@ -2000,7 +2096,7 @@ function buildLobbyGroups(games, { leadTitle, analyticsTitle, limit, source }) {
       groups.push({
         title: provider,
         analyticsTitle: provider,
-        games: providerGames.slice(0, 18)
+        games: uniqueGames(providerGames).slice(0, 18)
       });
     });
 
@@ -2060,7 +2156,7 @@ function sortImageFirst(games) {
 function uniqueGames(games) {
   const seen = new Set();
   return games.filter((game) => {
-    const key = game.id || game.name;
+    const key = uniqueGameKey(game);
     if (!key || seen.has(key)) return false;
     seen.add(key);
     return true;
@@ -2087,6 +2183,7 @@ function renderLobbyGroups(name, groups) {
 
 function createLobbyGroup(name, group, index) {
   const section = document.createElement("section");
+  const railGames = uniqueGames(group.games);
   section.className = "lobby-group";
   section.dataset.lobbyGroup = `${name}-${index}`;
   section.dataset.analyticsName = group.analyticsTitle || group.title;
@@ -2100,7 +2197,7 @@ function createLobbyGroup(name, group, index) {
   section
     .querySelector(".lobby-rail")
     .replaceChildren(
-      ...group.games.map((game, position) =>
+      ...railGames.map((game, position) =>
         createGameCard(game, { sectionName: group.analyticsTitle || group.title, position })
       )
     );
