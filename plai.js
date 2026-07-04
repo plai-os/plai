@@ -53,7 +53,9 @@ const PLAYAI_BACKLOG_API_URL = `${PLAYAI_API_BASE}/api/backlog`;
 const LOTTERY_HELPER_DISMISSED_KEY = "impossibleLotteryHelperDismissed";
 const SITE_LANGUAGE_KEY = "impossibleSiteLanguage";
 const OFFER_EXPERIMENT_INDEX_KEY = "impossibleOfferExperimentIndex";
-const CATALOGUE_CACHE_VERSION = 7;
+const CATALOGUE_CACHE_VERSION = 8;
+const CATALOGUE_SOURCE_URL = "data/lottoland-game-catalogue.json";
+const CATALOGUE_CACHE_MAX_AGE_MS = 1000 * 60 * 60 * 24 * 30;
 const PLAYAI_ROUTES = new Set([
   "ai-backlog",
   "ai-markets",
@@ -1698,7 +1700,7 @@ async function loadGames({ force = false } = {}) {
   try {
     builderState = await readBuilderState();
     const cached = force ? null : await readCachedGames();
-    const games = cached || await requestGames();
+    const games = cached || await requestStaticCatalogue();
     const playableGames = normaliseGames(games);
 
     if (!playableGames.length) {
@@ -1710,7 +1712,7 @@ async function loadGames({ force = false } = {}) {
     renderSite();
     setStatus(t("catalogueLoaded"), gameCountLabel(playableGames.length));
   } catch (error) {
-    console.warn("Impossible Casino catalogue failed:", error);
+    console.warn("Plai catalogue failed:", error);
     trackUxEvent("Error Encountered", {
       message: error.message,
       area: "catalogue"
@@ -1722,6 +1724,17 @@ async function loadGames({ force = false } = {}) {
       t("fallbackHint")
     );
   }
+}
+
+async function requestStaticCatalogue() {
+  const response = await fetch(CATALOGUE_SOURCE_URL, { cache: "no-cache" });
+  if (!response.ok) {
+    throw new Error(`Catalogue file unavailable (${response.status}).`);
+  }
+
+  const payload = await response.json();
+  if (Array.isArray(payload)) return payload;
+  return Array.isArray(payload.games) ? payload.games : [];
 }
 
 function requestGames() {
@@ -1754,7 +1767,7 @@ function requestGames() {
 async function readCachedGames() {
   const stored = await storageGet("impossibleCatalogue");
   const cached = stored.impossibleCatalogue;
-  if (!cached || Date.now() - cached.updatedAt > 1000 * 60 * 20) return null;
+  if (!cached || Date.now() - cached.updatedAt > CATALOGUE_CACHE_MAX_AGE_MS) return null;
   if (cached.version !== CATALOGUE_CACHE_VERSION) return null;
   return Array.isArray(cached.games) ? cached.games : null;
 }
