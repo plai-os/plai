@@ -5,19 +5,24 @@
   const defaults = {
     repeatedClickWindowMs: 2500,
     repeatedClickThreshold: 3,
-    maxStoredEvents: 350,
-    quotaRetryEvents: 120
+    maxStoredEvents: 120,
+    quotaRetryEvents: 40,
+    emergencyRetryEvents: 10
   };
 
   const sessionId = getSessionId();
   const recentClicks = new Map();
 
   function getSessionId() {
-    const existing = sessionStorage.getItem(SESSION_KEY);
-    if (existing) return existing;
-    const id = `session-${Date.now()}-${Math.random().toString(16).slice(2)}`;
-    sessionStorage.setItem(SESSION_KEY, id);
-    return id;
+    try {
+      const existing = sessionStorage.getItem(SESSION_KEY);
+      if (existing) return existing;
+      const id = `session-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+      sessionStorage.setItem(SESSION_KEY, id);
+      return id;
+    } catch {
+      return `session-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+    }
   }
 
   function createId(prefix) {
@@ -53,8 +58,20 @@
         localStorage.setItem(EVENT_KEY, JSON.stringify(fallbackEvents));
         return fallbackEvents;
       } catch (retryError) {
-        console.warn("PlayAI analytics storage is full; the latest event was not persisted.", retryError);
-        return fallbackEvents;
+        const emergencyEvents = trimmedEvents.slice(-defaults.emergencyRetryEvents);
+        try {
+          localStorage.removeItem(EVENT_KEY);
+          localStorage.setItem(EVENT_KEY, JSON.stringify(emergencyEvents));
+          return emergencyEvents;
+        } catch (finalError) {
+          try {
+            localStorage.removeItem(EVENT_KEY);
+          } catch {
+            // Storage may be unavailable; the page should still keep working.
+          }
+          console.warn("PlayAI analytics storage is full; analytics persistence has been paused.", finalError || retryError);
+          return [];
+        }
       }
     }
   }
@@ -116,7 +133,11 @@
         affectedComponent: suggestion.affectedComponent,
         queuedAt: new Date().toISOString()
       });
-      localStorage.setItem(IMPROVEMENT_KEY, JSON.stringify(improvements));
+      try {
+        localStorage.setItem(IMPROVEMENT_KEY, JSON.stringify(improvements));
+      } catch (error) {
+        console.warn("PlayAI improvement queue could not be saved locally.", error);
+      }
     }
   }
 

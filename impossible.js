@@ -48,6 +48,8 @@ const PLAYAI_BACKLOG_DELETED_KEY = "impossiblePlayAiBacklogDeleted";
 const PLAYAI_BACKLOG_STORAGE_VERSION_KEY = "impossiblePlayAiBacklogStorageVersion";
 const PLAYAI_BACKLOG_STORAGE_VERSION = "2026-07-04-audit-status-reconcile";
 const PLAYAI_BACKLOG_SOURCE_URL = "data/workspace-backlog.json";
+const PLAYAI_API_BASE = (globalThis.PLAI_API_BASE || "").replace(/\/$/, "");
+const PLAYAI_BACKLOG_API_URL = `${PLAYAI_API_BASE}/api/backlog`;
 const LOTTERY_HELPER_DISMISSED_KEY = "impossibleLotteryHelperDismissed";
 const SITE_LANGUAGE_KEY = "impossibleSiteLanguage";
 const OFFER_EXPERIMENT_INDEX_KEY = "impossibleOfferExperimentIndex";
@@ -1070,6 +1072,7 @@ let activeBacklogEditId = "";
 let activeKnowledgeEditId = "";
 let workspaceBacklogSourceItems = [];
 let workspaceBacklogSourceStatus = "code-fallback";
+let workspaceBacklogApiAvailable = false;
 
 languageSelect?.addEventListener("change", handleLanguageChange);
 document.addEventListener("click", handleRepeatedClickCapture, true);
@@ -4348,8 +4351,87 @@ function baseWorkspaceBacklogItems() {
   return workspaceBacklogSourceItems.length ? workspaceBacklogSourceItems : WORKSPACE_BACKLOG_ITEMS;
 }
 
+function canUseBacklogApi() {
+  return workspaceBacklogApiAvailable && workspaceBacklogSourceStatus === "sqlite-api";
+}
+
+function backlogApiItemUrl(itemId) {
+  return `${PLAYAI_BACKLOG_API_URL}/${encodeURIComponent(itemId)}`;
+}
+
+async function fetchWorkspaceBacklogApi() {
+  const response = await fetch(PLAYAI_BACKLOG_API_URL, { cache: "no-store" });
+  if (!response.ok) throw new Error(`Backlog API returned ${response.status}`);
+  const payload = await response.json();
+  const items = Array.isArray(payload.items) ? payload.items : Array.isArray(payload) ? payload : [];
+  if (!items.length) throw new Error("Backlog API did not contain any items.");
+  return items;
+}
+
+function upsertWorkspaceBacklogSourceItem(nextItem) {
+  const id = String(nextItem.id);
+  const index = workspaceBacklogSourceItems.findIndex((item) => String(item.id) === id);
+  if (index >= 0) workspaceBacklogSourceItems[index] = nextItem;
+  else workspaceBacklogSourceItems.push(nextItem);
+}
+
+function removeWorkspaceBacklogSourceItem(itemId) {
+  workspaceBacklogSourceItems = workspaceBacklogSourceItems.filter((item) => String(item.id) !== String(itemId));
+}
+
+async function persistBacklogItemToApi(itemId, patch) {
+  if (!canUseBacklogApi()) return;
+  try {
+    const response = await fetch(backlogApiItemUrl(itemId), {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(patch)
+    });
+    if (!response.ok) throw new Error(`Backlog API save returned ${response.status}`);
+    const payload = await response.json();
+    if (payload.item) upsertWorkspaceBacklogSourceItem(assessBacklogItem(payload.item));
+  } catch (error) {
+    console.warn("Shared backlog save failed; keeping the visible change until the API is available again.", error);
+  }
+}
+
+async function createBacklogItemViaApi(itemText) {
+  const response = await fetch(PLAYAI_BACKLOG_API_URL, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ item: itemText })
+  });
+  if (!response.ok) throw new Error(`Backlog API create returned ${response.status}`);
+  const payload = await response.json();
+  if (!payload.item) throw new Error("Backlog API did not return the created item.");
+  upsertWorkspaceBacklogSourceItem(assessBacklogItem(payload.item));
+  return payload.item;
+}
+
+async function deleteBacklogItemViaApi(itemId) {
+  if (!canUseBacklogApi()) return;
+  try {
+    const response = await fetch(backlogApiItemUrl(itemId), { method: "DELETE" });
+    if (!response.ok) throw new Error(`Backlog API delete returned ${response.status}`);
+  } catch (error) {
+    console.warn("Shared backlog delete failed; refresh the backlog if this item reappears.", error);
+  }
+}
+
 async function loadWorkspaceBacklogSource() {
   if (!globalThis.fetch) return;
+  try {
+    workspaceBacklogSourceItems = await fetchWorkspaceBacklogApi();
+    workspaceBacklogSourceStatus = "sqlite-api";
+    workspaceBacklogApiAvailable = true;
+    reconcileBacklogState();
+    if (currentRoute === "ai-backlog") renderWorkspaceBacklog();
+    return;
+  } catch (apiError) {
+    workspaceBacklogApiAvailable = false;
+    console.info("Shared backlog API unavailable; using the static project backlog.", apiError);
+  }
+
   const response = await fetch(PLAYAI_BACKLOG_SOURCE_URL, { cache: "no-store" });
   if (!response.ok) throw new Error(`Backlog source returned ${response.status}`);
   const payload = await response.json();
@@ -4362,6 +4444,9 @@ async function loadWorkspaceBacklogSource() {
 }
 
 function workspaceBacklogItems() {
+  if (canUseBacklogApi()) {
+    return baseWorkspaceBacklogItems().map((item) => assessBacklogItem(item));
+  }
   const overrides = readBacklogOverrides();
   const deletedIds = new Set(readDeletedBacklogItems());
   return [...baseWorkspaceBacklogItems(), ...readCustomBacklogItems()]
@@ -4377,11 +4462,26 @@ function nextBacklogItemId(items = workspaceBacklogItems()) {
 }
 
 function isBacklogItemSelected(item) {
+  if (canUseBacklogApi()) return ["Approved", "In progress"].includes(effectiveBacklogStatus(item));
   return readBacklogSelection().includes(String(item.id));
 }
 
 function setBacklogItemSelected(itemId, selected) {
   const currentItem = workspaceBacklogItems().find((item) => String(item.id) === String(itemId));
+  if (canUseBacklogApi()) {
+    if (!currentItem) return;
+    const currentStatus = effectiveBacklogStatus(currentItem);
+    if (["Implemented", "In progress", "Signed off", "Cancelled"].includes(currentStatus)) {
+      renderWorkspaceBacklog();
+      return;
+    }
+    updateBacklogItem(itemId, { status: selected ? "Approved" : "Outstanding" }, {
+      action: selected ? "Approved for implementation" : "Approval removed",
+      actor: "Human"
+    });
+    renderWorkspaceBacklog();
+    return;
+  }
   const current = new Set(readBacklogSelection().map(String));
   if (selected) current.add(String(itemId));
   else current.delete(String(itemId));
@@ -4411,6 +4511,18 @@ function updateBacklogItem(itemId, patch, audit = {}) {
   if (nextPatch.status === "Implemented" && !nextPatch.implementationNote) {
     nextPatch.implementationNote = audit.implementationNote || "Implementation completed. Add specific release notes during review if more detail is needed.";
   }
+  if (canUseBacklogApi()) {
+    const sourceItem = workspaceBacklogSourceItems.find((item) => String(item.id) === id);
+    if (sourceItem) {
+      const nextItem = assessBacklogItem({
+        ...sourceItem,
+        ...nextPatch
+      });
+      upsertWorkspaceBacklogSourceItem(nextItem);
+      persistBacklogItemToApi(id, nextPatch);
+      return;
+    }
+  }
   const customItems = readCustomBacklogItems();
   const customIndex = customItems.findIndex((item) => String(item.id) === id);
   if (customIndex >= 0) {
@@ -4431,6 +4543,11 @@ function updateBacklogItem(itemId, patch, audit = {}) {
 
 function deleteBacklogItem(itemId) {
   const id = String(itemId);
+  if (canUseBacklogApi()) {
+    removeWorkspaceBacklogSourceItem(id);
+    deleteBacklogItemViaApi(id);
+    return;
+  }
   const customItems = readCustomBacklogItems();
   const nextCustomItems = customItems.filter((item) => String(item.id) !== id);
   if (nextCustomItems.length !== customItems.length) {
@@ -4905,9 +5022,17 @@ function trashIconMarkup() {
 }
 
 function backlogQuickAddMarkup() {
+  const sourceLabel = workspaceBacklogSourceStatus === "sqlite-api"
+    ? "SQLite workspace API"
+    : workspaceBacklogSourceStatus === "repository"
+      ? "GitHub project data"
+      : "built-in fallback";
+  const sourceCopy = workspaceBacklogSourceStatus === "sqlite-api"
+    ? "New items are saved into the shared workspace database."
+    : "New items added here are browser drafts until committed into the shared source.";
   return `
     <section class="backlog-create-panel" data-backlog-create aria-label="Add backlog item">
-      <p class="backlog-source-note">Shared backlog source: ${workspaceBacklogSourceStatus === "repository" ? "GitHub project data" : "built-in fallback"}. New items added here are draft browser items until committed into the shared source.</p>
+      <p class="backlog-source-note">Shared backlog source: ${sourceLabel}. ${sourceCopy}</p>
       <label>
         <span>Add backlog item</span>
         <textarea data-backlog-new-item rows="2" placeholder="Describe the work you want added"></textarea>
@@ -4950,8 +5075,36 @@ function exportBacklogBackup() {
 
 function addBacklogItemFromForm(form) {
   if (!form) return;
-  const itemText = form.querySelector("[data-backlog-new-item]")?.value.trim();
+  const itemInput = form.querySelector("[data-backlog-new-item]");
+  const itemText = itemInput?.value.trim();
   if (!itemText) return;
+  if (canUseBacklogApi()) {
+    createBacklogItemViaApi(itemText)
+      .then(() => {
+        if (itemInput) itemInput.value = "";
+        activePlayAiListFilters["workspace-backlog"] = "unassessed";
+        activePlayAiListPages["workspace-backlog"] = 1;
+        renderWorkspaceBacklog();
+      })
+      .catch((error) => {
+        console.warn("Shared backlog create failed; keeping this as a browser draft.", error);
+        const currentItems = workspaceBacklogItems();
+        const item = {
+          id: nextBacklogItemId(currentItems),
+          area: "Unassessed",
+          item: itemText,
+          priority: "",
+          status: "Unassessed",
+          source: "Human",
+          effort: ""
+        };
+        writeCustomBacklogItems([...readCustomBacklogItems(), item]);
+        activePlayAiListFilters["workspace-backlog"] = "unassessed";
+        activePlayAiListPages["workspace-backlog"] = 1;
+        renderWorkspaceBacklog();
+      });
+    return;
+  }
   const currentItems = workspaceBacklogItems();
   const item = {
     id: nextBacklogItemId(currentItems),
@@ -4963,6 +5116,7 @@ function addBacklogItemFromForm(form) {
     effort: ""
   };
   writeCustomBacklogItems([...readCustomBacklogItems(), item]);
+  if (itemInput) itemInput.value = "";
   activePlayAiListFilters["workspace-backlog"] = "unassessed";
   activePlayAiListPages["workspace-backlog"] = 1;
   renderWorkspaceBacklog();

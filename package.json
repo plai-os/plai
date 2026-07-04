@@ -1,0 +1,13 @@
+{
+  "name": "plai-workspace",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "node server/plai-api.js",
+    "dev": "node server/plai-api.js"
+  },
+  "engines": {
+    "node": ">=24.0.0"
+  }
+}
