@@ -53,7 +53,7 @@ const PLAYAI_BACKLOG_API_URL = `${PLAYAI_API_BASE}/api/backlog`;
 const LOTTERY_HELPER_DISMISSED_KEY = "impossibleLotteryHelperDismissed";
 const SITE_LANGUAGE_KEY = "impossibleSiteLanguage";
 const OFFER_EXPERIMENT_INDEX_KEY = "impossibleOfferExperimentIndex";
-const CATALOGUE_CACHE_VERSION = 2;
+const CATALOGUE_CACHE_VERSION = 3;
 const PLAYAI_ROUTES = new Set([
   "ai-backlog",
   "ai-markets",
@@ -465,13 +465,16 @@ const TRACK_LABELS = {
 
 const TRANSLATION_CACHE = new Map();
 
+const OFFICIAL_GAME_IMAGE_BASE = "https://beta.lottoland.co.uk/scs/games/omni-content/public/v3/game-image/en_GB";
+const officialGameImage = (gameId) => `${OFFICIAL_GAME_IMAGE_BASE}/${gameId}/background.png`;
+
 const fallbackGames = [
   {
     id: "starburst",
     source: "casino",
     name: "Starburst",
     provider: "NetEnt",
-    image: "assets/game-art-jackpot.svg",
+    image: officialGameImage("Starburst"),
     playUrl: "https://beta.lottoland.co.uk/casino"
   },
   {
@@ -479,7 +482,7 @@ const fallbackGames = [
     source: "casino",
     name: "Wolf Gold",
     provider: "Pragmatic",
-    image: "assets/game-art-casino.svg",
+    image: officialGameImage("WolfGold"),
     playUrl: "https://beta.lottoland.co.uk/casino"
   },
   {
@@ -487,7 +490,7 @@ const fallbackGames = [
     source: "casino",
     name: "Big Bass Splash",
     provider: "Pragmatic",
-    image: "assets/game-art-casino.svg",
+    image: officialGameImage("BigBassSplash"),
     playUrl: "https://beta.lottoland.co.uk/casino"
   },
   {
@@ -495,7 +498,7 @@ const fallbackGames = [
     source: "casino",
     name: "Gates of Olympus",
     provider: "Pragmatic",
-    image: "assets/game-art-jackpot.svg",
+    image: officialGameImage("GatesOfOlympus1000"),
     playUrl: "https://beta.lottoland.co.uk/casino"
   },
   {
@@ -503,7 +506,7 @@ const fallbackGames = [
     source: "live",
     name: "Live Roulette",
     provider: "Live Casino",
-    image: "assets/game-art-live.svg",
+    image: officialGameImage("LiveRoulette"),
     playUrl: "https://beta.lottoland.co.uk/live-casino"
   },
   {
@@ -511,7 +514,7 @@ const fallbackGames = [
     source: "live",
     name: "Lightning Blackjack",
     provider: "Evolution",
-    image: "assets/game-art-live.svg",
+    image: officialGameImage("LiveLightningBlackjack"),
     playUrl: "https://beta.lottoland.co.uk/live-casino"
   },
   {
@@ -519,15 +522,15 @@ const fallbackGames = [
     source: "live",
     name: "Dream Catcher",
     provider: "Evolution",
-    image: "assets/game-art-live.svg",
+    image: officialGameImage("DreamCatcher"),
     playUrl: "https://beta.lottoland.co.uk/live-casino"
   },
   {
     id: "bingo-room",
     source: "bingo",
-    name: "Bingo Room",
+    name: "Big Bass Bingo",
     provider: "Bingo",
-    image: "assets/game-art-bingo.svg",
+    image: "https://cdn-assets-eu.frontify.com/s3/frontify-enterprise-files-eu/eyJvYXV0aCI6eyJjbGllbnRfaWQiOiJjbGllbnQtZmhweXV6cXNtcm8xYm56NiJ9LCJwYXRoIjoibG90dG9sYW5kXC9maWxlXC9CNWc1Vk1vVkFpVTZ6aU1IaFE5Uy5qcGcifQ:lottoland:1JUhC7WmKwsBS19ssaLXrXGvVKDQ5gpRk4-P9WxyaDo?type=jpg&width=320&quality=75",
     playUrl: "https://beta.lottoland.co.uk/bingo"
   },
   {
@@ -535,15 +538,15 @@ const fallbackGames = [
     source: "bingo",
     name: "Powerful Bingo",
     provider: "Bingo",
-    image: "assets/game-art-bingo.svg",
+    image: "https://cdn-assets-eu.frontify.com/s3/frontify-enterprise-files-eu/eyJvYXV0aCI6eyJjbGllbnRfaWQiOiJjbGllbnQtZmhweXV6cXNtcm8xYm56NiJ9LCJwYXRoIjoibG90dG9sYW5kXC9hY2NvdW50c1wvMDlcLzQwMDA4MzBcL3Byb2plY3RzXC83XC9hc3NldHNcLzYxXC83Mzc5MVwvOTdjMzg0ZWNkZGI5YjcyZjllMTI2ZTY5MzEyNzhiZTYtMTY1MDUzNjgyNi5wbmcifQ:lottoland:ob7WOPaNijk919eKGrEIVqDjn2sQtBDcn-K-BMCnufY?width=320&type=png",
     playUrl: "https://beta.lottoland.co.uk/bingo"
   },
   {
-    id: "bingo-big",
+    id: "hype-drop-pots",
     source: "bingo",
-    name: "Bingo Big",
-    provider: "Pragmatic Bingo",
-    image: "assets/game-art-bingo.svg",
+    name: "Hype - Drop Pots",
+    provider: "Bingo",
+    image: "https://cdn-assets-eu.frontify.com/s3/frontify-enterprise-files-eu/eyJvYXV0aCI6eyJjbGllbnRfaWQiOiJjbGllbnQtZmhweXV6cXNtcm8xYm56NiJ9LCJwYXRoIjoibG90dG9sYW5kXC9hY2NvdW50c1wvMDlcLzQwMDA4MzBcL3Byb2plY3RzXC83XC9hc3NldHNcL2EwXC83Mzc4OVwvYmRmNzExODdiODRlZjM5MjAzZGMxZGIyZTkzYTZiYTYtMTY1MDUzNjgyNi5wbmcifQ:lottoland:qd4B52vr6FaNTWEmcbwhwbvkmf1xcD7gMnxn0BxVfUw?width=320&type=png",
     playUrl: "https://beta.lottoland.co.uk/bingo"
   }
 ];
