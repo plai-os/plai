@@ -1,0 +1,225 @@
+{
+  "version": 1,
+  "product": "Plai",
+  "updatedAt": "2026-07-04T09:54:56.268Z",
+  "source": "Repository canonical backlog seed",
+  "note": "Canonical backlog items for the Plai workspace. Browser-created items are temporary drafts until committed into this file or a future backend store.",
+  "items": [
+    {
+      "id": 1,
+      "area": "Knowledge",
+      "item": "Move component toggles to market-level Knowledge documents",
+      "priority": "High",
+      "status": "Implemented",
+      "source": "Human"
+    },
+    {
+      "id": 2,
+      "area": "Components",
+      "item": "Treat component screens as implementation records, not source of truth",
+      "priority": "Medium",
+      "status": "Implemented",
+      "source": "Human"
+    },
+    {
+      "id": 3,
+      "area": "Studio",
+      "item": "Simplify Codex handoff now that PlayAI is a standalone app",
+      "priority": "Medium",
+      "status": "Implemented",
+      "source": "Human"
+    },
+    {
+      "id": 4,
+      "area": "Intelligence",
+      "item": "Split collection requirements from dashboard/reporting requirements",
+      "priority": "High",
+      "status": "Implemented",
+      "source": "Human"
+    },
+    {
+      "id": 5,
+      "area": "Navigation",
+      "item": "Move PlayAI from the top bar to a permanent side navigation with a larger work area",
+      "priority": "High",
+      "status": "Implemented",
+      "source": "Human"
+    },
+    {
+      "id": 6,
+      "area": "Naming",
+      "item": "Rename Knowledge Base references consistently so the workspace uses Knowledge Base instead of Market knowledge base",
+      "priority": "Low",
+      "status": "Implemented",
+      "source": "Human"
+    },
+    {
+      "id": 7,
+      "area": "Knowledge editing",
+      "item": "Create, edit, save and delete individual requirement lines, update the generated prompt, and highlight regulatory conflicts without blocking acceptance",
+      "priority": "High",
+      "status": "Implemented",
+      "source": "Human"
+    },
+    {
+      "id": 8,
+      "area": "Knowledge compliance",
+      "item": "Highlight non-compliant Knowledge documents and add a dedicated non-compliant filter in the list view",
+      "priority": "High",
+      "status": "Implemented",
+      "source": "Human"
+    },
+    {
+      "id": 9,
+      "area": "Form standards",
+      "item": "Add Knowledge requirements for field order, step order, validation rules and red helper text under invalid entries across every form",
+      "priority": "High",
+      "status": "Implemented",
+      "source": "Human"
+    },
+    {
+      "id": 10,
+      "area": "Knowledge governance",
+      "item": "Allow individual requirement rows to be locked with a lock toggle so key requirements can show future control without adding access control yet",
+      "priority": "Medium",
+      "status": "Implemented",
+      "source": "Human"
+    },
+    {
+      "id": 11,
+      "area": "List standards",
+      "item": "Always reset workspace navigation to list view and put All first in list filters",
+      "priority": "Medium",
+      "status": "Implemented",
+      "source": "Human"
+    },
+    {
+      "id": 12,
+      "area": "Market config",
+      "item": "Keep catalogue refresh and component toggles inside market configuration rather than global workspace navigation",
+      "priority": "Medium",
+      "status": "Implemented",
+      "source": "Human"
+    },
+    {
+      "id": 13,
+      "area": "Deposit limits",
+      "item": "Add rules in the Deposit Limits Knowledge Base for which amounts appear as quick buttons",
+      "priority": "Medium",
+      "status": "Implemented",
+      "source": "Human"
+    },
+    {
+      "id": 14,
+      "area": "Workspace IA",
+      "item": "Introduce saved workspace views so reviewers can jump between Market setup, Knowledge review and launch-readiness views",
+      "priority": "Medium",
+      "status": "Implemented",
+      "source": "Codex",
+      "effort": "Medium",
+      "benefit": "Reduces navigation effort during demos and lets reviewers return to common work patterns quickly."
+    },
+    {
+      "id": 15,
+      "area": "Quality gates",
+      "item": "Add a launch-readiness checklist that rolls up Knowledge status, brand leaks, catalogue health and required compliance components",
+      "priority": "High",
+      "status": "Implemented",
+      "source": "Codex",
+      "effort": "Large",
+      "benefit": "Creates a clear pre-demo and pre-launch confidence check so missing compliance, brand or data items are visible early."
+    },
+    {
+      "id": 16,
+      "area": "Knowledge prompts",
+      "item": "Add prompt diff previews so reviewers can see exactly what a Knowledge change would ask Codex to update before queueing it",
+      "priority": "Medium",
+      "status": "Implemented",
+      "source": "Codex",
+      "effort": "Medium",
+      "benefit": "Improves trust in the Knowledge-to-Codex workflow by showing the impact before a change request is queued."
+    },
+    {
+      "id": 17,
+      "area": "Extension packaging",
+      "item": "Rename the Chrome extension to PlayAI and update the extension logo and description to match the workspace product",
+      "priority": "Medium",
+      "status": "Implemented",
+      "source": "Human"
+    },
+    {
+      "id": 18,
+      "area": "List standards",
+      "item": "Add alternate row background shading to the shared PlayAI list renderer",
+      "priority": "Low",
+      "status": "Implemented",
+      "source": "Human"
+    },
+    {
+      "id": 19,
+      "area": "Navigation",
+      "item": "Remove the Site option from PlayAI navigation because the customer site can be launched from the Markets area",
+      "priority": "Medium",
+      "status": "Implemented",
+      "source": "Human"
+    },
+    {
+      "id": 20,
+      "area": "Navigation",
+      "item": "Vertically centre PlayAI side-nav items and add a subtle hover background state",
+      "priority": "Low",
+      "status": "Implemented",
+      "source": "Human"
+    },
+    {
+      "id": 21,
+      "area": "Navigation",
+      "item": "When a user clicks the current PlayAI navigation item, return that area to its list view instead of leaving the detail view open",
+      "priority": "Medium",
+      "status": "Implemented",
+      "source": "Human"
+    },
+    {
+      "id": 22,
+      "area": "Product branding",
+      "item": "Rename PlayAI to JackpotAI everywhere, including workspace labels, product copy, extension naming and supporting assets",
+      "priority": "Medium",
+      "status": "Cancelled",
+      "source": "Human"
+    },
+    {
+      "id": 23,
+      "area": "Backlog workflow",
+      "item": "Open backlog rows into a detail view with a back button, plus edit, save and delete controls before the item has started implementation",
+      "priority": "High",
+      "status": "Implemented",
+      "source": "Human"
+    },
+    {
+      "id": 24,
+      "area": "Backlog capture",
+      "item": "Add a quick-entry row above the backlog table so new backlog items can be captured with Unassessed status and no priority until reviewed",
+      "priority": "High",
+      "status": "Implemented",
+      "source": "Human"
+    },
+    {
+      "id": 25,
+      "area": "Backlog list",
+      "item": "Show the full backlog item description in the list by wrapping text within the row and final description cell",
+      "priority": "Medium",
+      "status": "Implemented",
+      "source": "Human"
+    },
+    {
+      "id": 26,
+      "area": "Version control",
+      "item": "Move the project into the existing GitHub repository plai-os/plai once the backlog and logo fixes are stable",
+      "priority": "Medium",
+      "status": "Outstanding",
+      "source": "Human",
+      "effort": "Medium",
+      "detail": "Steps: export the backlog JSON from the Backlog screen, make a clean project backup, move backlog source data into a repo-backed JSON/workspace data file so it is no longer dependent on browser storage, initialise Git for this folder if needed, create a first baseline checkpoint, connect the remote repository at https://github.com/plai-os/plai, push the baseline, then use branches for larger changes so demos can be rolled back safely."
+    }
+  ]
+}

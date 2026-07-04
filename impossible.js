@@ -47,6 +47,7 @@ const PLAYAI_BACKLOG_OVERRIDES_KEY = "impossiblePlayAiBacklogOverrides";
 const PLAYAI_BACKLOG_DELETED_KEY = "impossiblePlayAiBacklogDeleted";
 const PLAYAI_BACKLOG_STORAGE_VERSION_KEY = "impossiblePlayAiBacklogStorageVersion";
 const PLAYAI_BACKLOG_STORAGE_VERSION = "2026-07-04-audit-status-reconcile";
+const PLAYAI_BACKLOG_SOURCE_URL = "data/workspace-backlog.json";
 const LOTTERY_HELPER_DISMISSED_KEY = "impossibleLotteryHelperDismissed";
 const SITE_LANGUAGE_KEY = "impossibleSiteLanguage";
 const OFFER_EXPERIMENT_INDEX_KEY = "impossibleOfferExperimentIndex";
@@ -1067,6 +1068,8 @@ let activePlayAiListQueries = {};
 let activePlayAiListPages = {};
 let activeBacklogEditId = "";
 let activeKnowledgeEditId = "";
+let workspaceBacklogSourceItems = [];
+let workspaceBacklogSourceStatus = "code-fallback";
 
 languageSelect?.addEventListener("change", handleLanguageChange);
 document.addEventListener("click", handleRepeatedClickCapture, true);
@@ -1129,6 +1132,10 @@ function initialisePrototype() {
   safeStartupStep("AI Studio", loadAiStudioState);
   safeStartupStep("widgets", loadWidgetState);
   safeStartupStep("backlog state", reconcileBacklogState);
+  loadWorkspaceBacklogSource().catch((error) => {
+    workspaceBacklogSourceStatus = "code-fallback";
+    console.warn("Repository backlog source skipped:", error);
+  });
   safeStartupStep("prototype tracking", () =>
     trackUxEvent("Prototype Loaded", { prototype: "Impossible Casino" })
   );
@@ -4337,10 +4344,27 @@ function writeDeletedBacklogItems(itemIds) {
   localStorage.setItem(PLAYAI_BACKLOG_DELETED_KEY, JSON.stringify([...new Set(itemIds.map(String))]));
 }
 
+function baseWorkspaceBacklogItems() {
+  return workspaceBacklogSourceItems.length ? workspaceBacklogSourceItems : WORKSPACE_BACKLOG_ITEMS;
+}
+
+async function loadWorkspaceBacklogSource() {
+  if (!globalThis.fetch) return;
+  const response = await fetch(PLAYAI_BACKLOG_SOURCE_URL, { cache: "no-store" });
+  if (!response.ok) throw new Error(`Backlog source returned ${response.status}`);
+  const payload = await response.json();
+  const items = Array.isArray(payload.items) ? payload.items : [];
+  if (!items.length) throw new Error("Backlog source did not contain any items.");
+  workspaceBacklogSourceItems = items;
+  workspaceBacklogSourceStatus = "repository";
+  reconcileBacklogState();
+  if (currentRoute === "ai-backlog") renderWorkspaceBacklog();
+}
+
 function workspaceBacklogItems() {
   const overrides = readBacklogOverrides();
   const deletedIds = new Set(readDeletedBacklogItems());
-  return [...WORKSPACE_BACKLOG_ITEMS, ...readCustomBacklogItems()]
+  return [...baseWorkspaceBacklogItems(), ...readCustomBacklogItems()]
     .filter((item) => !deletedIds.has(String(item.id)))
     .map((item) => assessBacklogItem({
       ...item,
@@ -4883,6 +4907,7 @@ function trashIconMarkup() {
 function backlogQuickAddMarkup() {
   return `
     <section class="backlog-create-panel" data-backlog-create aria-label="Add backlog item">
+      <p class="backlog-source-note">Shared backlog source: ${workspaceBacklogSourceStatus === "repository" ? "GitHub project data" : "built-in fallback"}. New items added here are draft browser items until committed into the shared source.</p>
       <label>
         <span>Add backlog item</span>
         <textarea data-backlog-new-item rows="2" placeholder="Describe the work you want added"></textarea>
@@ -4899,7 +4924,8 @@ function exportBacklogBackup() {
   const payload = {
     product: "Plai",
     exportedAt: new Date().toISOString(),
-    note: "Backlog backup before moving or sharing the workspace. Includes source items plus local browser review state.",
+    source: workspaceBacklogSourceStatus,
+    note: "Backlog backup before moving or sharing the workspace. Includes repository/source items plus browser draft review state.",
     items: workspaceBacklogItems().map((item) => ({
       ...item,
       effectiveStatus: effectiveBacklogStatus(item)

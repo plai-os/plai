@@ -4363,6 +4363,15 @@ body[data-ai-studio-style="contrast"] .documentation-grid li {
   box-shadow: 0 18px 44px rgba(7, 16, 31, .08);
 }
 
+.backlog-source-note {
+  grid-column: 1 / -1;
+  margin: 0;
+  color: #526879;
+  font-size: 14px;
+  font-weight: 850;
+  line-height: 1.4;
+}
+
 .backlog-create-panel label {
   display: grid;
   gap: 8px;
