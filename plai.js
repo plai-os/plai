@@ -10,7 +10,6 @@ const ROUTES = new Set([
   "games",
   "live",
   "bingo",
-  "exclusive",
   "lotteries",
   "promos",
   "help",
@@ -143,7 +142,6 @@ const SITE_TRANSLATIONS = {
     navGames: "Juegos",
     navLive: "Casino en vivo",
     navBingo: "Bingo",
-    navExclusive: "Exclusivo",
     navLotteries: "Loterías",
     navPromotions: "Promociones",
     navHelp: "Centro de ayuda",
@@ -441,7 +439,6 @@ const ROUTE_LABELS = {
   games: "Games",
   live: "Live Casino",
   bingo: "Bingo",
-  exclusive: "Exclusive",
   lotteries: "Lotteries",
   promos: "Promotions",
   help: "Help Centre",
@@ -1488,7 +1485,6 @@ function initialisePrototype() {
   safeStartupStep("route", updateRoute);
   safeStartupStep("brand", applySelectedBrand);
   safeStartupStep("language", applySiteLanguage);
-  safeStartupStep("demo catalogue", renderDemoCatalogue);
   loadGames().catch((error) => {
     console.warn("Catalogue startup skipped:", error);
     currentGames = fallbackGames;
@@ -1696,28 +1692,14 @@ function gameCountLabel(count) {
   return `${count} ${t("gamesCount")}`;
 }
 
-function renderDemoCatalogue() {
-  currentGames = fallbackGames;
-  renderSite();
-  setStatus(t("fallbackContent"), gameCountLabel(currentGames.length));
-}
-
 async function loadGames({ force = false } = {}) {
   setStatus(t("loadingGames"));
   if (force) {
     viewedGameImpressionKeys.clear();
   }
 
-  builderState = await readBuilderState();
-
-  if (!force) {
-    currentGames = fallbackGames;
-    renderSite();
-    setStatus(t("fallbackContent"), gameCountLabel(currentGames.length));
-    return;
-  }
-
   try {
+    builderState = await readBuilderState();
     const cached = force ? null : await readCachedGames();
     const games = cached || await requestStaticCatalogue();
     const playableGames = normaliseGames(games);
@@ -3782,10 +3764,6 @@ function handleGameNavigation(event) {
     `game-${gameCard?.dataset.gameId || "unknown"}`,
     properties
   );
-  if (typeof window.openBubblegumStampede === "function") {
-    window.openBubblegumStampede();
-    return;
-  }
   openLoginModal();
 }
 
@@ -8700,128 +8678,3 @@ function escapeHtml(value) {
     .replaceAll(">", "&gt;")
     .replaceAll('"', "&quot;");
 }
-
-function setupExclusiveGameLauncher() {
-  const modal = document.querySelector("[data-exclusive-game-modal]");
-  if (modal?.dataset.exclusiveLauncherReady === "true") return;
-
-  const launchers = document.querySelectorAll("[data-exclusive-game-launch]");
-  if (!launchers.length) return;
-
-  if (modal) modal.dataset.exclusiveLauncherReady = "true";
-
-  const open = (event) => {
-    event?.preventDefault?.();
-    if (typeof window.openBubblegumStampede === "function") {
-      window.openBubblegumStampede();
-      return;
-    }
-    if (!modal) return;
-    modal.hidden = false;
-    document.body.classList.add("exclusive-game-open");
-    window.requestAnimationFrame(() => modal.querySelector("iframe")?.focus?.());
-  };
-
-  const close = () => {
-    if (!modal) return;
-    modal.hidden = true;
-    document.body.classList.remove("exclusive-game-open");
-  };
-
-  launchers.forEach((launcher) => launcher.addEventListener("click", open));
-  if (!modal) return;
-  const closers = modal.querySelectorAll("[data-exclusive-game-close]");
-  closers.forEach((closer) => closer.addEventListener("click", close));
-  modal.addEventListener("click", (event) => {
-    if (event.target === modal) close();
-  });
-  document.addEventListener("keydown", (event) => {
-    if (event.key === "Escape" && !modal.hidden) close();
-  });
-}
-
-if (document.readyState === "loading") {
-  document.addEventListener("DOMContentLoaded", setupExclusiveGameLauncher);
-} else {
-  setupExclusiveGameLauncher();
-}
-
-/* plai-bubblegum-launch-flow:start */
-(function () {
-  const GAME_PATH = 'games/bubblegum-stampede/index.html?v=20260705-safe';
-  const MODAL_ID = 'plai-bubblegum-game-modal';
-  const STYLE_ID = 'plai-bubblegum-launch-style';
-
-  function gameUrl() {
-    return new URL(GAME_PATH, window.location.href).toString();
-  }
-
-  function injectLauncherStyles() {
-    if (document.getElementById(STYLE_ID)) return;
-    const style = document.createElement('style');
-    style.id = STYLE_ID;
-    style.textContent = [
-      '.plai-bubblegum-modal { position: fixed; inset: 0; z-index: 10000; display: grid; place-items: center; padding: clamp(16px, 3vw, 42px); background: rgba(22, 6, 48, 0.82); backdrop-filter: blur(12px); }',
-      '.plai-bubblegum-frame { width: min(96vw, 1480px); height: min(90vh, 920px); overflow: hidden; border: 1px solid rgba(255, 255, 255, 0.28); border-radius: 24px; background: #2b0a65; box-shadow: 0 28px 90px rgba(20, 5, 44, 0.5); }',
-      '.plai-bubblegum-frame-header { min-height: 72px; display: flex; align-items: center; gap: 14px; padding: 14px 22px; color: #fff; background: linear-gradient(90deg, #42107b, #ff43ad); }',
-      '.plai-game-type-pill { display: inline-flex; align-items: center; min-height: 28px; padding: 0 10px; background: #ffe95b; color: #211247; font-size: 13px; font-weight: 950; text-transform: uppercase; }',
-      '.plai-bubblegum-frame-header strong { min-width: 0; font-size: clamp(20px, 2vw, 28px); line-height: 1; }',
-      '.plai-bubblegum-close { width: 52px; height: 52px; margin-left: auto; border: 0; border-radius: 999px; display: grid; place-items: center; color: #fff; background: rgba(255, 255, 255, 0.2); font-size: 34px; font-weight: 900; cursor: pointer; }',
-      '.plai-bubblegum-frame iframe { display: block; width: 100%; height: calc(100% - 72px); border: 0; background: #2b0a65; }',
-      'body.plai-bubblegum-open { overflow: hidden; }'
-    ].join('\n');
-    document.head.appendChild(style);
-  }
-
-  function closeBubblegumStampede() {
-    document.getElementById(MODAL_ID)?.remove();
-    document.body.classList.remove('plai-bubblegum-open', 'exclusive-game-open');
-    const legacyModal = document.querySelector('[data-exclusive-game-modal]');
-    if (legacyModal) legacyModal.hidden = true;
-  }
-
-  function openBubblegumStampede() {
-    injectLauncherStyles();
-    document.querySelector('[data-login-modal]')?.setAttribute('hidden', '');
-    const legacyModal = document.querySelector('[data-exclusive-game-modal]');
-    if (legacyModal) legacyModal.hidden = true;
-
-    let modal = document.getElementById(MODAL_ID);
-    if (!modal) {
-      modal = document.createElement('div');
-      modal.id = MODAL_ID;
-      modal.className = 'plai-bubblegum-modal';
-      modal.setAttribute('role', 'dialog');
-      modal.setAttribute('aria-modal', 'true');
-      modal.setAttribute('aria-label', 'Bubblegum Stampede');
-      modal.innerHTML = [
-        '<div class="plai-bubblegum-frame" role="document">',
-        '<div class="plai-bubblegum-frame-header">',
-        '<span class="plai-game-type-pill">Exclusive</span>',
-        '<strong>Bubblegum Stampede</strong>',
-        '<button class="plai-bubblegum-close" type="button" aria-label="Close Bubblegum Stampede">&times;</button>',
-        '</div>',
-        '<iframe title="Bubblegum Stampede" src="' + gameUrl() + '" loading="eager" allow="autoplay; fullscreen"></iframe>',
-        '</div>'
-      ].join('');
-      document.body.appendChild(modal);
-      modal.addEventListener('click', (event) => {
-        if (event.target === modal || event.target.closest('.plai-bubblegum-close')) {
-          closeBubblegumStampede();
-        }
-      });
-    } else {
-      const iframe = modal.querySelector('iframe');
-      if (iframe) iframe.src = gameUrl();
-    }
-
-    document.body.classList.add('plai-bubblegum-open');
-    window.requestAnimationFrame(() => modal.querySelector('iframe')?.focus?.());
-  }
-
-  window.openBubblegumStampede = openBubblegumStampede;
-  document.addEventListener('keydown', (event) => {
-    if (event.key === 'Escape') closeBubblegumStampede();
-  });
-})();
-/* plai-bubblegum-launch-flow:end */
