@@ -61,6 +61,10 @@ assert(
   plaiScript.includes("event?.preventDefault?.();"),
   "Exclusive route launch buttons must be intercepted before the legacy empty modal opens."
 );
+assert(
+  !plaiScript.includes("function findGameCard(node)"),
+  "Bubblegum launcher must not install a broad document-wide game-card click catcher."
+);
 
 for (const entryPoint of ["index.html", "impossible.html"]) {
   const entryHtml = readWorkspaceFile(entryPoint);
