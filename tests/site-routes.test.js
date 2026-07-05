@@ -53,6 +53,14 @@ assert(
   plaiScript.includes("plai-bubblegum-launch-style"),
   "Bubblegum Stampede launcher must inject its modal styling from the loaded script."
 );
+assert(
+  plaiScript.includes("window.openBubblegumStampede();\n    return;\n  }\n  openLoginModal();"),
+  "Original game-card navigation must open Bubblegum Stampede instead of the login handoff."
+);
+assert(
+  plaiScript.includes("event?.preventDefault?.();"),
+  "Exclusive route launch buttons must be intercepted before the legacy empty modal opens."
+);
 
 for (const entryPoint of ["index.html", "impossible.html"]) {
   const entryHtml = readWorkspaceFile(entryPoint);

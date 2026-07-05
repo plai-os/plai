@@ -3767,6 +3767,10 @@ function handleGameNavigation(event) {
     `game-${gameCard?.dataset.gameId || "unknown"}`,
     properties
   );
+  if (typeof window.openBubblegumStampede === "function") {
+    window.openBubblegumStampede();
+    return;
+  }
   openLoginModal();
 }
 
@@ -8684,26 +8688,34 @@ function escapeHtml(value) {
 
 function setupExclusiveGameLauncher() {
   const modal = document.querySelector("[data-exclusive-game-modal]");
-  if (!modal || modal.dataset.exclusiveLauncherReady === "true") return;
+  if (modal?.dataset.exclusiveLauncherReady === "true") return;
 
   const launchers = document.querySelectorAll("[data-exclusive-game-launch]");
-  const closers = modal.querySelectorAll("[data-exclusive-game-close]");
   if (!launchers.length) return;
 
-  modal.dataset.exclusiveLauncherReady = "true";
+  if (modal) modal.dataset.exclusiveLauncherReady = "true";
 
-  const open = () => {
+  const open = (event) => {
+    event?.preventDefault?.();
+    if (typeof window.openBubblegumStampede === "function") {
+      window.openBubblegumStampede();
+      return;
+    }
+    if (!modal) return;
     modal.hidden = false;
     document.body.classList.add("exclusive-game-open");
     window.requestAnimationFrame(() => modal.querySelector("iframe")?.focus?.());
   };
 
   const close = () => {
+    if (!modal) return;
     modal.hidden = true;
     document.body.classList.remove("exclusive-game-open");
   };
 
   launchers.forEach((launcher) => launcher.addEventListener("click", open));
+  if (!modal) return;
+  const closers = modal.querySelectorAll("[data-exclusive-game-close]");
   closers.forEach((closer) => closer.addEventListener("click", close));
   modal.addEventListener("click", (event) => {
     if (event.target === modal) close();
@@ -8857,6 +8869,7 @@ if (document.readyState === "loading") {
   }
 
   function isCardControl(node) {
+    if (node.closest('[data-exclusive-game-launch], .game-card, .game-tile, [data-play-url], [data-game-id], [data-track-game-id], [data-game-card]')) return false;
     return !!node.closest('.site-nav, .prototype-nav, footer, [data-route-link], .view-all, .rail-view-all, .carousel-control, .carousel-button, .drag-handle, .drag-grip, .delete-game, .trash-button, .remove-game, .heart-button, .favourite-button, .favorite-button, input, select, textarea');
   }
 
