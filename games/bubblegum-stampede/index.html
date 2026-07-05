@@ -211,7 +211,15 @@
       .game-shell { height: auto; min-height: 100vh; overflow: visible; }
       .stats { width: 100%; grid-template-columns: repeat(3, 1fr); }
       .game-board { grid-template-columns: 1fr; }
-      .reel-grid { min-height: 320px; grid-template-columns: repeat(5, minmax(52px, 1fr)); grid-template-rows: repeat(4, 58px); }
+      .reel-panel { overflow: visible; }
+      .reel-grid {
+        min-height: 0;
+        height: auto;
+        grid-template-columns: repeat(5, minmax(0, 1fr));
+        grid-template-rows: repeat(4, auto);
+        align-content: start;
+      }
+      .symbol { aspect-ratio: 1 / 1; }
       .control-panel { overflow: visible; }
     }
   </style>
