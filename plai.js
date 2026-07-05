@@ -8718,3 +8718,208 @@ if (document.readyState === "loading") {
 } else {
   setupExclusiveGameLauncher();
 }
+
+/* plai-bubblegum-launch-flow:start */
+(function () {
+  const GAME_PATH = 'games/bubblegum-stampede/index.html';
+  const MODAL_ID = 'plai-bubblegum-game-modal';
+  const STYLE_ID = 'plai-bubblegum-launch-style';
+
+  function gameUrl() {
+    return new URL(GAME_PATH, window.location.href).toString();
+  }
+
+  function injectLauncherStyles() {
+    if (document.getElementById(STYLE_ID)) return;
+    const style = document.createElement('style');
+    style.id = STYLE_ID;
+    style.textContent = `
+      .plai-bubblegum-modal {
+        position: fixed;
+        inset: 0;
+        z-index: 10000;
+        display: grid;
+        place-items: center;
+        padding: clamp(16px, 3vw, 42px);
+        background: rgba(22, 6, 48, 0.82);
+        backdrop-filter: blur(12px);
+      }
+
+      .plai-bubblegum-frame {
+        width: min(96vw, 1480px);
+        height: min(90vh, 920px);
+        overflow: hidden;
+        border: 1px solid rgba(255, 255, 255, 0.28);
+        border-radius: 24px;
+        background: #2b0a65;
+        box-shadow: 0 28px 90px rgba(20, 5, 44, 0.5);
+      }
+
+      .plai-bubblegum-frame-header {
+        min-height: 72px;
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        padding: 14px 22px;
+        color: #fff;
+        background: linear-gradient(90deg, #42107b, #ff43ad);
+      }
+
+      .plai-game-type-pill {
+        display: inline-flex;
+        align-items: center;
+        min-height: 28px;
+        padding: 0 10px;
+        background: #ffe95b;
+        color: #211247;
+        font-size: 13px;
+        font-weight: 950;
+        text-transform: uppercase;
+      }
+
+      .plai-bubblegum-frame-header strong {
+        min-width: 0;
+        font-size: clamp(20px, 2vw, 28px);
+        line-height: 1;
+      }
+
+      .plai-bubblegum-close {
+        width: 52px;
+        height: 52px;
+        margin-left: auto;
+        border: 0;
+        border-radius: 999px;
+        display: grid;
+        place-items: center;
+        color: #fff;
+        background: rgba(255, 255, 255, 0.2);
+        font-size: 34px;
+        font-weight: 900;
+        cursor: pointer;
+      }
+
+      .plai-bubblegum-frame iframe {
+        display: block;
+        width: 100%;
+        height: calc(100% - 72px);
+        border: 0;
+        background: #2b0a65;
+      }
+
+      body.plai-bubblegum-open {
+        overflow: hidden;
+      }
+    `;
+    document.head.appendChild(style);
+  }
+
+  function openBubblegumStampede() {
+    injectLauncherStyles();
+    let modal = document.getElementById(MODAL_ID);
+    if (!modal) {
+      modal = document.createElement('div');
+      modal.id = MODAL_ID;
+      modal.className = 'plai-bubblegum-modal';
+      modal.setAttribute('role', 'dialog');
+      modal.setAttribute('aria-modal', 'true');
+      modal.innerHTML = `
+        <div class="plai-bubblegum-frame" role="document">
+          <div class="plai-bubblegum-frame-header">
+            <span class="plai-game-type-pill">Exclusive</span>
+            <strong>Bubblegum Stampede</strong>
+            <button class="plai-bubblegum-close" type="button" aria-label="Close Bubblegum Stampede">×</button>
+          </div>
+          <iframe title="Bubblegum Stampede" src="${gameUrl()}" loading="eager"></iframe>
+        </div>`;
+      document.body.appendChild(modal);
+      modal.addEventListener('click', (event) => {
+        if (event.target === modal || event.target.closest('.plai-bubblegum-close')) {
+          closeBubblegumStampede();
+        }
+      });
+    } else {
+      const iframe = modal.querySelector('iframe');
+      if (iframe && !iframe.src) iframe.src = gameUrl();
+    }
+    document.body.classList.add('plai-bubblegum-open');
+    window.requestAnimationFrame(() => modal.querySelector('iframe')?.focus?.());
+  }
+
+  function closeBubblegumStampede() {
+    document.getElementById(MODAL_ID)?.remove();
+    document.body.classList.remove('plai-bubblegum-open');
+  }
+
+  window.openBubblegumStampede = openBubblegumStampede;
+
+  function isWorkspaceSurface(node) {
+    return !!node.closest('.workspace-shell, .playai-shell, .plai-workspace, .playai-app, .plai-app-shell, .workspace-main, .workspace-sidebar');
+  }
+
+  function isCardControl(node) {
+    return !!node.closest('.site-nav, .prototype-nav, footer, [data-route-link], .view-all, .rail-view-all, .carousel-control, .carousel-button, .drag-handle, .drag-grip, .delete-game, .trash-button, .remove-game, .heart-button, .favourite-button, .favorite-button, input, select, textarea');
+  }
+
+  function findGameCard(node) {
+    return node.closest('[data-exclusive-game-launch], .plai-exclusive-game-card, .game-card, .game-tile, .casino-game-card, .library-game-card, [data-play-url], [data-game-id], [data-track-game-id], [data-game-card]');
+  }
+
+  document.addEventListener('click', function (event) {
+    const target = event.target;
+    if (!(target instanceof Element)) return;
+    if (isWorkspaceSurface(target) || isCardControl(target)) return;
+    const card = findGameCard(target);
+    if (!card) return;
+    event.preventDefault();
+    event.stopPropagation();
+    openBubblegumStampede();
+  }, true);
+
+  function exclusiveTileMarkup() {
+    return `
+      <section class="plai-exclusive-standard" aria-label="Exclusive games">
+        <div class="section-badge">EXCLUSIVE</div>
+        <section class="game-rail plai-exclusive-rail" data-rail="exclusive">
+          <div class="rail-heading">
+            <h2>Plai exclusives</h2>
+          </div>
+          <div class="game-row plai-exclusive-row">
+            <article class="game-card plai-exclusive-game-card" data-game-id="bubblegum-stampede" tabindex="0" role="button" aria-label="Launch Bubblegum Stampede">
+              <div class="game-card-media plai-exclusive-card-art">
+                <span class="game-type-badge exclusive-badge">Exclusive</span>
+                <div class="plai-card-reels">777</div>
+              </div>
+              <div class="game-card-body">
+                <h3>Bubblegum Stampede</h3>
+                <p>Plai Studios</p>
+              </div>
+            </article>
+          </div>
+        </section>
+      </section>`;
+  }
+
+  function normalizeExclusiveRoute() {
+    const route = (window.location.hash || '').replace('#', '') || 'home';
+    if (route !== 'exclusive') return;
+    const panel = document.querySelector('#exclusive, [data-route="exclusive"], [data-view="exclusive"], .route-exclusive, .exclusive-lobby');
+    if (!panel || panel.dataset.plaiExclusiveNormalized === 'true') return;
+    panel.dataset.plaiExclusiveNormalized = 'true';
+    panel.innerHTML = exclusiveTileMarkup();
+  }
+
+  window.addEventListener('hashchange', () => setTimeout(normalizeExclusiveRoute, 0));
+  document.addEventListener('DOMContentLoaded', () => setTimeout(normalizeExclusiveRoute, 0));
+  injectLauncherStyles();
+  setTimeout(normalizeExclusiveRoute, 100);
+  setTimeout(normalizeExclusiveRoute, 600);
+
+  document.addEventListener('keydown', function (event) {
+    if (event.key === 'Escape') closeBubblegumStampede();
+    if ((event.key === 'Enter' || event.key === ' ') && event.target instanceof Element && event.target.closest('.plai-exclusive-game-card')) {
+      event.preventDefault();
+      openBubblegumStampede();
+    }
+  });
+})();
+/* plai-bubblegum-launch-flow:end */

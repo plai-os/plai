@@ -55,7 +55,7 @@ async function navigateToGame(tabId, url) {
 
 async function loadExternalCatalogues() {
   const sources = [
-    { path: "/casino", source: "casino", selector: "Game" },
+    { path: "/casino/slot-games", source: "casino", selector: "Game" },
     { path: "/live-casino", source: "live", selector: "Game" },
     { path: "/bingo", source: "bingo", selector: "Room" }
   ];

@@ -1,22 +1,1324 @@
 <!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Bubblegum Stampede | Plai Exclusive</title>
-    <link rel="stylesheet" href="./src/styles.css">
-    <script type="importmap">
-      {
-        "imports": {
-          "react": "https://esm.sh/react@18.2.0",
-          "react-dom/client": "https://esm.sh/react-dom@18.2.0/client",
-          "pixi.js": "https://cdn.jsdelivr.net/npm/pixi.js@8.8.1/dist/pixi.mjs"
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Bubblegum Stampede</title>
+  <style>
+    :root {
+      --ink: #211247;
+      --deep: #2b0a65;
+      --purple: #661bb4;
+      --pink: #ff43ad;
+      --rose: #ff7cc8;
+      --yellow: #ffe95b;
+      --mint: #60eadb;
+      --cream: #fff3fb;
+      --glass: rgba(255, 255, 255, 0.16);
+      --line: rgba(255, 255, 255, 0.24);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      color: white;
+      overflow: hidden;
+      background:
+        radial-gradient(circle at 16% 18%, rgba(255, 233, 91, 0.28), transparent 16%),
+        radial-gradient(circle at 82% 20%, rgba(255, 67, 173, 0.36), transparent 18%),
+        radial-gradient(circle at 72% 78%, rgba(96, 234, 219, 0.22), transparent 20%),
+        linear-gradient(135deg, #3d087b 0%, #8c22cc 48%, #ffd4ef 100%);
+    }
+
+    button {
+      font: inherit;
+    }
+
+    .plai-loader {
+      position: fixed;
+      inset: 0;
+      z-index: 20;
+      display: grid;
+      place-items: center;
+      background: linear-gradient(135deg, #220545, #ff43ad);
+      transition: opacity 320ms ease, visibility 320ms ease;
+    }
+
+    .plai-loader.is-hidden {
+      opacity: 0;
+      visibility: hidden;
+    }
+
+    .loader-card {
+      width: min(420px, calc(100vw - 48px));
+      padding: 32px;
+      border: 1px solid var(--line);
+      border-radius: 28px;
+      background: rgba(255, 255, 255, 0.16);
+      box-shadow: 0 28px 80px rgba(35, 7, 76, 0.35);
+      text-align: center;
+    }
+
+    .bot-orb {
+      width: 86px;
+      height: 86px;
+      margin: 0 auto 18px;
+      display: grid;
+      place-items: center;
+      border-radius: 50%;
+      background: radial-gradient(circle at 35% 25%, white, var(--mint) 36%, #188fb2 72%);
+      color: var(--deep);
+      font-size: 38px;
+      box-shadow: 0 0 34px rgba(96, 234, 219, 0.55);
+      animation: float 1.4s ease-in-out infinite alternate;
+    }
+
+    .game-shell {
+      min-height: 100vh;
+      padding: clamp(18px, 3vw, 34px);
+      display: grid;
+      gap: 18px;
+      grid-template-rows: auto 1fr;
+    }
+
+    .game-header {
+      display: flex;
+      justify-content: space-between;
+      gap: 18px;
+      align-items: center;
+      padding: 18px 22px;
+      border: 1px solid var(--line);
+      border-radius: 24px;
+      background: rgba(43, 10, 101, 0.54);
+      box-shadow: 0 18px 42px rgba(43, 10, 101, 0.24);
+      backdrop-filter: blur(12px);
+    }
+
+    .title-group {
+      min-width: 0;
+    }
+
+    .eyebrow,
+    .summary-tag,
+    .log-label {
+      display: inline-flex;
+      align-items: center;
+      width: fit-content;
+      min-height: 30px;
+      padding: 5px 12px;
+      border-radius: 999px;
+      background: var(--yellow);
+      color: var(--ink);
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: 0.02em;
+      font-size: 13px;
+    }
+
+    h1 {
+      margin: 8px 0 0;
+      color: white;
+      font-size: clamp(34px, 5vw, 72px);
+      line-height: 0.9;
+      letter-spacing: 0;
+      text-shadow: 0 8px 0 rgba(43, 10, 101, 0.28);
+    }
+
+    .header-stats {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(100px, 1fr));
+      gap: 10px;
+      width: min(620px, 52vw);
+    }
+
+    .stat-card {
+      min-height: 78px;
+      padding: 12px;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 18px;
+      background: rgba(255, 255, 255, 0.13);
+    }
+
+    .stat-label {
+      display: block;
+      color: rgba(255, 255, 255, 0.72);
+      font-size: 12px;
+      font-weight: 800;
+      text-transform: uppercase;
+    }
+
+    .stat-value {
+      display: block;
+      margin-top: 4px;
+      font-size: 28px;
+      line-height: 1;
+      font-weight: 950;
+    }
+
+    .game-board {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(300px, 370px);
+      gap: 18px;
+      min-height: 0;
+    }
+
+    .reel-panel,
+    .control-panel,
+    .summary-panel {
+      border: 1px solid var(--line);
+      border-radius: 28px;
+      background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.17), rgba(255, 255, 255, 0.08)),
+        rgba(43, 10, 101, 0.42);
+      box-shadow: 0 22px 70px rgba(43, 10, 101, 0.22);
+      backdrop-filter: blur(12px);
+    }
+
+    .reel-panel {
+      min-height: 0;
+      padding: clamp(14px, 2vw, 26px);
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+    }
+
+    .message-strip {
+      min-height: 58px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 12px 18px;
+      border-radius: 18px;
+      background: rgba(255, 255, 255, 0.14);
+      color: white;
+      font-size: clamp(18px, 2vw, 28px);
+      font-weight: 950;
+    }
+
+    .cascade-meter {
+      min-width: 104px;
+      padding: 8px 12px;
+      border-radius: 999px;
+      background: rgba(255, 233, 91, 0.95);
+      color: var(--ink);
+      font-size: 15px;
+      font-weight: 950;
+      text-align: center;
+    }
+
+    .reel-grid {
+      flex: 1;
+      min-height: 410px;
+      display: grid;
+      grid-template-columns: repeat(5, minmax(88px, 1fr));
+      grid-template-rows: repeat(4, minmax(82px, 1fr));
+      gap: clamp(8px, 1.2vw, 14px);
+      padding: clamp(10px, 1.4vw, 18px);
+      border-radius: 24px;
+      border: 2px solid rgba(255, 255, 255, 0.2);
+      background:
+        linear-gradient(90deg, rgba(255,255,255,0.08) 1px, transparent 1px),
+        linear-gradient(rgba(255,255,255,0.08) 1px, transparent 1px),
+        rgba(27, 5, 58, 0.72);
+      background-size: 36px 36px;
+      overflow: hidden;
+    }
+
+    .symbol {
+      position: relative;
+      display: grid;
+      place-items: center;
+      min-width: 0;
+      border-radius: 22px;
+      color: var(--ink);
+      font-size: clamp(18px, 2.2vw, 34px);
+      font-weight: 950;
+      box-shadow: inset 0 -10px 0 rgba(0, 0, 0, 0.08), 0 12px 22px rgba(28, 6, 65, 0.26);
+      transition: transform 190ms ease, opacity 190ms ease;
+      user-select: none;
+    }
+
+    .symbol::after {
+      content: "";
+      position: absolute;
+      inset: 8px 10px auto auto;
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.78);
+    }
+
+    .symbol.is-winning {
+      animation: pulseWin 520ms ease-in-out 2;
+      outline: 4px solid var(--yellow);
+      z-index: 2;
+    }
+
+    .symbol.is-dropping {
+      transform: translateY(10px) scale(0.94);
+      opacity: 0.55;
+    }
+
+    .symbol-gum { background: linear-gradient(135deg, #ff91d4, #ff43ad); }
+    .symbol-pop { background: linear-gradient(135deg, #b47bff, #661bb4); color: white; }
+    .symbol-coin { background: linear-gradient(135deg, #ffe95b, #ffaf5c); }
+    .symbol-star { background: linear-gradient(135deg, #fff9a6, #ffe95b); }
+    .symbol-elephant { background: linear-gradient(135deg, #f1f3ff, #b9d6ff); }
+    .symbol-wild { background: linear-gradient(135deg, #60eadb, #3fc0ff); }
+    .symbol-free { background: linear-gradient(135deg, #ffffff, #ffc9ec); }
+
+    .control-column {
+      min-height: 0;
+      display: grid;
+      grid-template-rows: auto auto 1fr;
+      gap: 18px;
+    }
+
+    .control-panel,
+    .summary-panel {
+      padding: 20px;
+    }
+
+    .control-panel h2,
+    .summary-panel h2 {
+      margin: 0 0 14px;
+      font-size: 24px;
+      color: white;
+    }
+
+    .bet-row {
+      display: grid;
+      grid-template-columns: 54px 1fr 54px;
+      gap: 10px;
+      align-items: center;
+      margin-bottom: 14px;
+    }
+
+    .round-btn,
+    .spin-button {
+      min-height: 54px;
+      border: 0;
+      border-radius: 18px;
+      font-weight: 950;
+      cursor: pointer;
+      box-shadow: 0 12px 24px rgba(43, 10, 101, 0.25);
+    }
+
+    .round-btn {
+      background: rgba(255, 255, 255, 0.92);
+      color: var(--ink);
+      font-size: 24px;
+    }
+
+    .bet-value {
+      min-height: 54px;
+      display: grid;
+      place-items: center;
+      border-radius: 18px;
+      background: rgba(255, 255, 255, 0.14);
+      color: white;
+      font-size: 26px;
+      font-weight: 950;
+    }
+
+    .spin-button {
+      width: 100%;
+      min-height: 76px;
+      background: linear-gradient(135deg, var(--yellow), #ffb64d);
+      color: var(--ink);
+      font-size: 30px;
+      text-transform: uppercase;
+    }
+
+    .spin-button:disabled,
+    .round-btn:disabled {
+      opacity: 0.58;
+      cursor: wait;
+    }
+
+    .feature-list,
+    .win-log {
+      display: grid;
+      gap: 10px;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    .feature-list li,
+    .win-log li {
+      padding: 10px 12px;
+      border-radius: 14px;
+      background: rgba(255, 255, 255, 0.12);
+      color: rgba(255, 255, 255, 0.86);
+      font-size: 14px;
+      font-weight: 750;
+    }
+
+    .win-log {
+      max-height: 158px;
+      overflow: auto;
+    }
+
+    .summary-panel {
+      overflow: auto;
+    }
+
+    .summary-grid {
+      display: grid;
+      gap: 10px;
+    }
+
+    .summary-item {
+      padding: 12px;
+      border-radius: 16px;
+      background: rgba(255, 255, 255, 0.12);
+    }
+
+    .summary-item strong {
+      display: block;
+      color: white;
+      font-size: 14px;
+      margin-bottom: 4px;
+    }
+
+    .summary-item span {
+      color: rgba(255, 255, 255, 0.74);
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .particle {
+      position: fixed;
+      width: 11px;
+      height: 11px;
+      border-radius: 50%;
+      pointer-events: none;
+      background: var(--yellow);
+      animation: popParticle 780ms ease-out forwards;
+      z-index: 10;
+    }
+
+    @keyframes float {
+      from { transform: translateY(0); }
+      to { transform: translateY(-10px); }
+    }
+
+    @keyframes pulseWin {
+      50% { transform: scale(1.08) rotate(-2deg); }
+    }
+
+    @keyframes popParticle {
+      to {
+        transform: translate(var(--x), var(--y)) scale(0);
+        opacity: 0;
+      }
+    }
+
+    @media (max-width: 1100px) {
+      body {
+        overflow: auto;
+      }
+
+      .game-board {
+        grid-template-columns: 1fr;
+      }
+
+      .header-stats {
+        width: 100%;
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      .game-header {
+        align-items: stretch;
+        flex-direction: column;
+      }
+    }
+
+    @media (max-width: 720px) {
+      .game-shell {
+        padding: 12px;
+      }
+
+      .reel-grid {
+        min-height: 330px;
+        grid-template-columns: repeat(5, minmax(54px, 1fr));
+        grid-template-rows: repeat(4, 64px);
+      }
+
+      .symbol {
+        border-radius: 15px;
+        font-size: 16px;
+      }
+    }
+  </style>
+  <style id="stampede-modal-fit-and-feature-layer">
+    html,
+    body {
+      min-height: 100%;
+      overflow: hidden;
+    }
+
+    body {
+      transform-origin: top center;
+      zoom: 0.75;
+    }
+
+    @supports not (zoom: 1) {
+      body {
+        transform: scale(0.75);
+        width: 133.333%;
+      }
+    }
+
+    .stampede-feature-hud {
+      position: fixed;
+      z-index: 50;
+      top: 18px;
+      right: 18px;
+      display: grid;
+      gap: 10px;
+      width: min(320px, calc(100vw - 36px));
+      pointer-events: none;
+    }
+
+    .stampede-feature-card {
+      border: 1px solid rgba(255, 255, 255, 0.28);
+      border-radius: 18px;
+      background: linear-gradient(135deg, rgba(72, 19, 128, 0.9), rgba(255, 70, 180, 0.84));
+      box-shadow: 0 18px 50px rgba(58, 8, 94, 0.34);
+      color: #fff;
+      padding: 14px 16px;
+      font-family: inherit;
+      backdrop-filter: blur(14px);
+    }
+
+    .stampede-feature-card strong {
+      display: block;
+      font-size: 15px;
+      line-height: 1.1;
+      margin-bottom: 8px;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .stampede-meter-track {
+      overflow: hidden;
+      height: 10px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.26);
+    }
+
+    .stampede-meter-fill {
+      width: 0%;
+      height: 100%;
+      border-radius: inherit;
+      background: linear-gradient(90deg, #ffe85a, #62f2dc);
+      box-shadow: 0 0 22px rgba(255, 232, 90, 0.64);
+      transition: width 420ms ease;
+    }
+
+    .stampede-feature-meta {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      margin-top: 8px;
+      font-size: 13px;
+      font-weight: 800;
+      opacity: 0.92;
+    }
+
+    .stampede-win-toast {
+      position: fixed;
+      z-index: 80;
+      left: 50%;
+      top: 28%;
+      transform: translate(-50%, -50%) scale(0.94);
+      min-width: 260px;
+      border: 2px solid rgba(255, 255, 255, 0.58);
+      border-radius: 24px;
+      background: linear-gradient(135deg, #ffe85a, #ff47b5 58%, #5825c8);
+      color: #27114d;
+      box-shadow: 0 24px 70px rgba(50, 8, 80, 0.44);
+      padding: 20px 24px;
+      text-align: center;
+      font-family: inherit;
+      font-size: 28px;
+      font-weight: 950;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 220ms ease, transform 220ms ease;
+    }
+
+    .stampede-win-toast.is-visible {
+      opacity: 1;
+      transform: translate(-50%, -50%) scale(1);
+    }
+  </style>
+
+
+<!-- plai-game-polish:start -->
+<style>
+  body.plai-game-polished {
+    overflow: hidden;
+  }
+
+  body.plai-game-polished .slice-badge,
+  body.plai-game-polished .game-kicker,
+  body.plai-game-polished .stage-kicker,
+  body.plai-game-polished .exclusive-badge,
+  body.plai-game-polished h1,
+  body.plai-game-polished .game-title,
+  body.plai-game-polished .game-headline {
+    display: none !important;
+  }
+
+  body.plai-game-polished main,
+  body.plai-game-polished .game-shell,
+  body.plai-game-polished .slot-shell,
+  body.plai-game-polished .bubblegum-game,
+  body.plai-game-polished .game-stage,
+  body.plai-game-polished .stage-panel {
+    max-height: 100vh !important;
+    min-height: 0 !important;
+    overflow: hidden !important;
+  }
+
+  body.plai-game-polished .game-shell,
+  body.plai-game-polished .slot-shell,
+  body.plai-game-polished .bubblegum-game,
+  body.plai-game-polished main {
+    padding-top: 14px !important;
+  }
+
+  body.plai-game-polished .stats-grid,
+  body.plai-game-polished .stat-grid,
+  body.plai-game-polished .meter-grid,
+  body.plai-game-polished .hud-grid,
+  body.plai-game-polished .game-stats {
+    display: grid !important;
+    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+    gap: 12px !important;
+    margin: 10px 0 14px !important;
+  }
+
+  body.plai-game-polished .stat-card,
+  body.plai-game-polished .meter-card,
+  body.plai-game-polished .hud-card,
+  body.plai-game-polished .game-stat {
+    min-height: 76px !important;
+    padding: 12px 14px !important;
+    border-radius: 18px !important;
+  }
+
+  body.plai-game-polished .stat-card strong,
+  body.plai-game-polished .meter-card strong,
+  body.plai-game-polished .hud-card strong,
+  body.plai-game-polished .game-stat strong,
+  body.plai-game-polished .stat-value,
+  body.plai-game-polished .meter-value {
+    font-size: clamp(24px, 3vw, 40px) !important;
+    line-height: 1 !important;
+  }
+
+  body.plai-game-polished .reels,
+  body.plai-game-polished .reel-window,
+  body.plai-game-polished .slot-reels {
+    transform-origin: top center;
+  }
+
+  body.plai-game-polished .symbol-icon-cell {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    text-indent: 0 !important;
+    color: transparent !important;
+    overflow: hidden !important;
+  }
+
+  body.plai-game-polished .symbol-icon-cell svg {
+    width: 78% !important;
+    height: 78% !important;
+    max-width: 96px;
+    max-height: 96px;
+    display: block;
+    color: initial;
+    filter: drop-shadow(0 8px 8px rgba(24, 4, 43, 0.25));
+  }
+
+  @media (max-width: 900px) {
+    body.plai-game-polished .stats-grid,
+    body.plai-game-polished .stat-grid,
+    body.plai-game-polished .meter-grid,
+    body.plai-game-polished .hud-grid,
+    body.plai-game-polished .game-stats {
+      grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    }
+  }
+</style>
+<!-- plai-game-polish:end -->
+
+</head>
+<body>
+  <div class="plai-loader" id="plaiLoader" aria-live="polite">
+    <div class="loader-card">
+      <div class="bot-orb">P</div>
+      <h2>Plai is building Bubblegum Stampede</h2>
+      <p>Loading reels, math config, cascades and feature counters.</p>
+    </div>
+  </div>
+
+  <main class="game-shell" data-game="bubblegum-stampede">
+    <header class="game-header">
+      <div class="title-group">
+        <span class="eyebrow">Exclusive playable slice</span>
+        <h1>Bubblegum Stampede</h1>
+      </div>
+      <div class="header-stats" aria-label="Game meters">
+        <div class="stat-card"><span class="stat-label">Balance</span><span class="stat-value" id="balanceValue">£1000</span></div>
+        <div class="stat-card"><span class="stat-label">Last win</span><span class="stat-value" id="lastWinValue">£0</span></div>
+        <div class="stat-card"><span class="stat-label">Total won</span><span class="stat-value" id="totalWonValue">£0</span></div>
+        <div class="stat-card"><span class="stat-label">Jackpot meter</span><span class="stat-value" id="jackpotValue">£500</span></div>
+      </div>
+    </header>
+
+    <section class="game-board">
+      <section class="reel-panel" aria-label="Bubblegum Stampede reels">
+        <div class="message-strip">
+          <span id="statusMessage">Press Spin to start the stampede.</span>
+          <span class="cascade-meter" id="cascadeMeter">x1.0</span>
+        </div>
+        <div class="reel-grid" id="reelGrid" aria-label="Five reels with four rows"></div>
+      </section>
+
+      <aside class="control-column">
+        <section class="control-panel" aria-label="Game controls">
+          <h2>Play controls</h2>
+          <div class="bet-row">
+            <button class="round-btn" id="betDown" type="button" aria-label="Decrease bet">-</button>
+            <div class="bet-value" id="betValue">£2</div>
+            <button class="round-btn" id="betUp" type="button" aria-label="Increase bet">+</button>
+          </div>
+          <button class="spin-button" id="spinButton" type="button">Spin</button>
+        </section>
+
+        <section class="control-panel" aria-label="Feature counters">
+          <h2>Features</h2>
+          <ul class="feature-list">
+            <li>Free spins: <strong id="freeSpinValue">0</strong></li>
+            <li>Cascade depth: <strong id="cascadeDepthValue">0</strong></li>
+            <li>Bonus progress: <strong id="bonusProgressValue">0/3 FREE</strong></li>
+          </ul>
+        </section>
+
+        <section class="summary-panel" aria-label="Build Summary">
+          <span class="summary-tag">Build Summary</span>
+          <h2>Spec progress</h2>
+          <div class="summary-grid">
+            <div class="summary-item"><strong>Foundation</strong><span>Standalone shell, responsive game frame and five-by-four reels are active.</span></div>
+            <div class="summary-item"><strong>Gameplay</strong><span>Configurable paylines, paid spins, wins and cascades are running.</span></div>
+            <div class="summary-item"><strong>Features</strong><span>Wilds, scatters, free spins and a prototype jackpot meter are included.</span></div>
+            <div class="summary-item"><strong>Showcase</strong><span>Plai loading state and build notes explain what has been generated.</span></div>
+            <div class="summary-item"><strong>Polish</strong><span>Win pulses, burst particles and mobile layout are ready for review.</span></div>
+          </div>
+        </section>
+
+        <section class="control-panel" aria-label="Win log">
+          <span class="log-label">Spin log</span>
+          <ul class="win-log" id="winLog">
+            <li>Waiting for the first spin.</li>
+          </ul>
+        </section>
+      </aside>
+    </section>
+  </main>
+
+  <script>
+    const mathConfig = {
+      reels: 5,
+      rows: 4,
+      baseBalance: 1000,
+      betSteps: [1, 2, 5, 10, 20],
+      paylines: [
+        [0, 0, 0, 0, 0],
+        [1, 1, 1, 1, 1],
+        [2, 2, 2, 2, 2],
+        [3, 3, 3, 3, 3],
+        [0, 1, 2, 1, 0],
+        [3, 2, 1, 2, 3],
+        [1, 2, 3, 2, 1],
+        [2, 1, 0, 1, 2]
+      ],
+      cascadeMultiplierStep: 0.5,
+      maxCascadeDepth: 5,
+      freeSpinAward: 6,
+      jackpotOdds: 0.02,
+      jackpotMultiplier: 100
+    };
+
+    const symbols = [
+      { id: "gum", label: "GUM", weight: 26, payouts: { 3: 1, 4: 3, 5: 8 }, className: "symbol-gum" },
+      { id: "pop", label: "POP", weight: 22, payouts: { 3: 1.2, 4: 4, 5: 10 }, className: "symbol-pop" },
+      { id: "coin", label: "COIN", weight: 18, payouts: { 3: 1.6, 4: 5, 5: 14 }, className: "symbol-coin" },
+      { id: "star", label: "STAR", weight: 14, payouts: { 3: 2, 4: 7, 5: 18 }, className: "symbol-star" },
+      { id: "elephant", label: "ELE", weight: 9, payouts: { 3: 3, 4: 12, 5: 35 }, className: "symbol-elephant" },
+      { id: "wild", label: "WILD", weight: 7, wild: true, payouts: { 3: 3, 4: 9, 5: 25 }, className: "symbol-wild" },
+      { id: "free", label: "FREE", weight: 6, scatter: true, payouts: { 3: 2, 4: 6, 5: 15 }, className: "symbol-free" }
+    ];
+
+    const weightedSymbols = symbols.flatMap((symbol) => Array.from({ length: symbol.weight }, () => symbol));
+    const state = {
+      balance: mathConfig.baseBalance,
+      betIndex: 1,
+      totalWon: 0,
+      lastWin: 0,
+      freeSpins: 0,
+      cascadeDepth: 0,
+      multiplier: 1,
+      jackpot: 500,
+      grid: [],
+      spinning: false
+    };
+
+    const nodes = {
+      reelGrid: document.getElementById("reelGrid"),
+      spinButton: document.getElementById("spinButton"),
+      betDown: document.getElementById("betDown"),
+      betUp: document.getElementById("betUp"),
+      balanceValue: document.getElementById("balanceValue"),
+      betValue: document.getElementById("betValue"),
+      lastWinValue: document.getElementById("lastWinValue"),
+      totalWonValue: document.getElementById("totalWonValue"),
+      jackpotValue: document.getElementById("jackpotValue"),
+      statusMessage: document.getElementById("statusMessage"),
+      cascadeMeter: document.getElementById("cascadeMeter"),
+      cascadeDepthValue: document.getElementById("cascadeDepthValue"),
+      freeSpinValue: document.getElementById("freeSpinValue"),
+      bonusProgressValue: document.getElementById("bonusProgressValue"),
+      winLog: document.getElementById("winLog"),
+      loader: document.getElementById("plaiLoader")
+    };
+
+    function money(value) {
+      return `£${Math.max(0, value).toFixed(value % 1 ? 2 : 0)}`;
+    }
+
+    function randomSymbol() {
+      return weightedSymbols[Math.floor(Math.random() * weightedSymbols.length)];
+    }
+
+    function makeGrid() {
+      return Array.from({ length: mathConfig.rows }, () =>
+        Array.from({ length: mathConfig.reels }, randomSymbol)
+      );
+    }
+
+    function getBet() {
+      return mathConfig.betSteps[state.betIndex];
+    }
+
+    function evaluateWins(grid, bet = getBet(), multiplier = state.multiplier) {
+      const wins = [];
+      let amount = 0;
+      let scatterCount = 0;
+      const scatterPositions = [];
+
+      grid.forEach((row, rowIndex) => {
+        row.forEach((symbol, reelIndex) => {
+          if (symbol.scatter) {
+            scatterCount += 1;
+            scatterPositions.push([rowIndex, reelIndex]);
+          }
+        });
+      });
+
+      mathConfig.paylines.forEach((line, lineIndex) => {
+        const lineSymbols = line.map((row, reel) => grid[row][reel]);
+        const target = lineSymbols.find((symbol) => !symbol.wild && !symbol.scatter) || lineSymbols[0];
+        if (!target || target.scatter) return;
+
+        const positions = [];
+        let count = 0;
+        for (let reel = 0; reel < lineSymbols.length; reel += 1) {
+          const symbol = lineSymbols[reel];
+          if (symbol.id === target.id || symbol.wild) {
+            count += 1;
+            positions.push([line[reel], reel]);
+          } else {
+            break;
+          }
+        }
+
+        if (count >= 3) {
+          const payout = bet * (target.payouts[count] || 0) * multiplier;
+          amount += payout;
+          wins.push({ type: "payline", lineIndex, symbol: target, count, positions, amount: payout });
+        }
+      });
+
+      if (scatterCount >= 3) {
+        const scatterSymbol = symbols.find((symbol) => symbol.scatter);
+        const payout = bet * (scatterSymbol.payouts[Math.min(scatterCount, 5)] || 2) * multiplier;
+        amount += payout;
+        wins.push({
+          type: "scatter",
+          symbol: scatterSymbol,
+          count: scatterCount,
+          positions: scatterPositions,
+          amount: payout,
+          freeSpins: mathConfig.freeSpinAward
+        });
+      }
+
+      return { wins, amount };
+    }
+
+    function cascadeGrid(grid, wins) {
+      const removed = new Set();
+      wins.forEach((win) => {
+        win.positions.forEach(([row, reel]) => removed.add(`${row}:${reel}`));
+      });
+
+      const nextGrid = Array.from({ length: mathConfig.rows }, () => Array(mathConfig.reels).fill(null));
+      for (let reel = 0; reel < mathConfig.reels; reel += 1) {
+        const remaining = [];
+        for (let row = mathConfig.rows - 1; row >= 0; row -= 1) {
+          if (!removed.has(`${row}:${reel}`)) remaining.push(grid[row][reel]);
+        }
+        for (let row = mathConfig.rows - 1; row >= 0; row -= 1) {
+          nextGrid[row][reel] = remaining.shift() || randomSymbol();
         }
       }
-    </script>
-  </head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="./src/main.js"></script>
-  </body>
+
+      return nextGrid;
+    }
+
+    function renderGrid(winningPositions = []) {
+      const winningSet = new Set(winningPositions.map(([row, reel]) => `${row}:${reel}`));
+      nodes.reelGrid.innerHTML = "";
+      state.grid.forEach((row, rowIndex) => {
+        row.forEach((symbol, reelIndex) => {
+          const tile = document.createElement("div");
+          tile.className = `symbol ${symbol.className}`;
+          if (winningSet.has(`${rowIndex}:${reelIndex}`)) tile.classList.add("is-winning");
+          tile.textContent = symbol.label;
+          tile.setAttribute("aria-label", symbol.id);
+          nodes.reelGrid.appendChild(tile);
+        });
+      });
+    }
+
+    function updateStats() {
+      nodes.balanceValue.textContent = money(state.balance);
+      nodes.betValue.textContent = money(getBet());
+      nodes.lastWinValue.textContent = money(state.lastWin);
+      nodes.totalWonValue.textContent = money(state.totalWon);
+      nodes.jackpotValue.textContent = money(state.jackpot);
+      nodes.freeSpinValue.textContent = state.freeSpins;
+      nodes.cascadeDepthValue.textContent = state.cascadeDepth;
+      nodes.cascadeMeter.textContent = `x${state.multiplier.toFixed(1)}`;
+      const freeSymbols = state.grid.flat().filter((symbol) => symbol.scatter).length;
+      nodes.bonusProgressValue.textContent = `${Math.min(freeSymbols, 3)}/3 FREE`;
+      nodes.betDown.disabled = state.spinning || state.betIndex === 0;
+      nodes.betUp.disabled = state.spinning || state.betIndex === mathConfig.betSteps.length - 1;
+      nodes.spinButton.disabled = state.spinning || (state.balance < getBet() && state.freeSpins === 0);
+    }
+
+    function addLog(message) {
+      if (nodes.winLog.children.length === 1 && nodes.winLog.textContent.includes("Waiting")) {
+        nodes.winLog.innerHTML = "";
+      }
+      const item = document.createElement("li");
+      item.textContent = message;
+      nodes.winLog.prepend(item);
+      while (nodes.winLog.children.length > 8) nodes.winLog.lastElementChild.remove();
+    }
+
+    function setMessage(message) {
+      nodes.statusMessage.textContent = message;
+    }
+
+    function sleep(ms) {
+      return new Promise((resolve) => setTimeout(resolve, ms));
+    }
+
+    function burstParticles() {
+      const bounds = nodes.reelGrid.getBoundingClientRect();
+      for (let index = 0; index < 28; index += 1) {
+        const particle = document.createElement("span");
+        particle.className = "particle";
+        particle.style.left = `${bounds.left + bounds.width / 2}px`;
+        particle.style.top = `${bounds.top + bounds.height / 2}px`;
+        particle.style.setProperty("--x", `${Math.random() * 420 - 210}px`);
+        particle.style.setProperty("--y", `${Math.random() * 320 - 160}px`);
+        particle.style.background = index % 3 === 0 ? "var(--mint)" : index % 2 === 0 ? "var(--yellow)" : "var(--pink)";
+        document.body.appendChild(particle);
+        setTimeout(() => particle.remove(), 820);
+      }
+    }
+
+    async function spin() {
+      if (state.spinning) return;
+      if (state.balance < getBet() && state.freeSpins === 0) {
+        setMessage("Balance is too low for this bet.");
+        return;
+      }
+
+      state.spinning = true;
+      state.lastWin = 0;
+      state.cascadeDepth = 0;
+      state.multiplier = 1;
+      const freeSpinMode = state.freeSpins > 0;
+      if (freeSpinMode) {
+        state.freeSpins -= 1;
+        setMessage("Free spin in progress.");
+      } else {
+        state.balance -= getBet();
+        setMessage("Stampede spinning...");
+      }
+      updateStats();
+
+      state.grid = makeGrid();
+      renderGrid();
+      await sleep(420);
+
+      let cascadeResult = evaluateWins(state.grid);
+      while (cascadeResult.wins.length && state.cascadeDepth < mathConfig.maxCascadeDepth) {
+        const positions = cascadeResult.wins.flatMap((win) => win.positions);
+        renderGrid(positions);
+        burstParticles();
+
+        state.lastWin += cascadeResult.amount;
+        state.totalWon += cascadeResult.amount;
+        state.balance += cascadeResult.amount;
+        state.cascadeDepth += 1;
+        cascadeResult.wins.forEach((win) => {
+          if (win.freeSpins) {
+            state.freeSpins += win.freeSpins;
+            addLog(`${win.count} FREE symbols awarded ${win.freeSpins} free spins.`);
+          } else {
+            addLog(`${win.count} ${win.symbol.label} paid ${money(win.amount)}.`);
+          }
+        });
+
+        setMessage(`Cascade ${state.cascadeDepth}: ${money(cascadeResult.amount)} win.`);
+        updateStats();
+        await sleep(780);
+
+        state.grid = cascadeGrid(state.grid, cascadeResult.wins);
+        state.multiplier += mathConfig.cascadeMultiplierStep;
+        renderGrid();
+        updateStats();
+        await sleep(460);
+        cascadeResult = evaluateWins(state.grid);
+      }
+
+      if (Math.random() < mathConfig.jackpotOdds) {
+        const jackpotWin = getBet() * mathConfig.jackpotMultiplier;
+        state.lastWin += jackpotWin;
+        state.totalWon += jackpotWin;
+        state.balance += jackpotWin;
+        state.jackpot = 500;
+        addLog(`Mini jackpot triggered for ${money(jackpotWin)}.`);
+        setMessage(`Jackpot stampede: ${money(jackpotWin)}!`);
+        burstParticles();
+      } else {
+        state.jackpot += getBet() * 0.3;
+      }
+
+      if (!state.lastWin) {
+        setMessage("No win this time. Try another spin.");
+        addLog("No win on this spin.");
+      } else {
+        setMessage(`Spin complete: ${money(state.lastWin)} total win.`);
+      }
+
+      state.spinning = false;
+      updateStats();
+    }
+
+    function changeBet(direction) {
+      state.betIndex = Math.min(
+        mathConfig.betSteps.length - 1,
+        Math.max(0, state.betIndex + direction)
+      );
+      updateStats();
+    }
+
+    function boot() {
+      state.grid = makeGrid();
+      renderGrid();
+      updateStats();
+      nodes.spinButton.addEventListener("click", spin);
+      nodes.betDown.addEventListener("click", () => changeBet(-1));
+      nodes.betUp.addEventListener("click", () => changeBet(1));
+      setTimeout(() => nodes.loader.classList.add("is-hidden"), 720);
+    }
+
+    window.bubblegumStampedeTestApi = {
+      mathConfig,
+      state,
+      makeGrid,
+      evaluateWins,
+      cascadeGrid,
+      spin
+    };
+
+    boot();
+  </script>
+  <script id="stampede-gameplay-feature-layer">
+    (() => {
+      const state = {
+        meter: 0,
+        freeSpins: 0,
+        cascade: 1,
+        lastWin: 0
+      };
+
+      function createHud() {
+        if (document.querySelector(".stampede-feature-hud")) return;
+        const hud = document.createElement("aside");
+        hud.className = "stampede-feature-hud";
+        hud.innerHTML = `
+          <div class="stampede-feature-card" aria-live="polite">
+            <strong>Stampede meter</strong>
+            <div class="stampede-meter-track" aria-hidden="true">
+              <div class="stampede-meter-fill"></div>
+            </div>
+            <div class="stampede-feature-meta">
+              <span data-stampede-meter>0%</span>
+              <span data-stampede-free-spins>Free spins: 0</span>
+              <span data-stampede-cascade>x1</span>
+            </div>
+          </div>
+        `;
+        document.body.appendChild(hud);
+      }
+
+      function createToast() {
+        let toast = document.querySelector(".stampede-win-toast");
+        if (toast) return toast;
+        toast = document.createElement("div");
+        toast.className = "stampede-win-toast";
+        toast.setAttribute("role", "status");
+        document.body.appendChild(toast);
+        return toast;
+      }
+
+      function updateHud() {
+        const fill = document.querySelector(".stampede-meter-fill");
+        const meter = document.querySelector("[data-stampede-meter]");
+        const freeSpins = document.querySelector("[data-stampede-free-spins]");
+        const cascade = document.querySelector("[data-stampede-cascade]");
+        if (fill) fill.style.width = `${state.meter}%`;
+        if (meter) meter.textContent = `${state.meter}%`;
+        if (freeSpins) freeSpins.textContent = `Free spins: ${state.freeSpins}`;
+        if (cascade) cascade.textContent = `x${state.cascade}`;
+      }
+
+      function showWinToast(message) {
+        const toast = createToast();
+        toast.textContent = message;
+        toast.classList.add("is-visible");
+        window.clearTimeout(showWinToast.timeoutId);
+        showWinToast.timeoutId = window.setTimeout(() => {
+          toast.classList.remove("is-visible");
+        }, 1200);
+      }
+
+      function advanceFeatureModel() {
+        const meterGain = Math.floor(8 + Math.random() * 18);
+        const win = Math.random() > 0.42;
+        state.cascade = win ? Math.min(state.cascade + 1, 5) : 1;
+        state.lastWin = win ? state.cascade * (Math.floor(4 + Math.random() * 18)) : 0;
+        state.meter = Math.min(100, state.meter + meterGain);
+
+        if (state.freeSpins > 0) {
+          state.freeSpins -= 1;
+        }
+
+        if (state.meter >= 100) {
+          state.meter = 0;
+          state.freeSpins += 5;
+          showWinToast("5 Free Spins!");
+        } else if (win) {
+          showWinToast(`Cascade win x${state.cascade}`);
+        }
+
+        updateHud();
+      }
+
+      function bindSpinButtons() {
+        document.addEventListener("click", (event) => {
+          const button = event.target.closest("button, [role='button']");
+          if (!button) return;
+          const label = `${button.textContent || ""} ${button.getAttribute("aria-label") || ""}`;
+          if (!/spin/i.test(label)) return;
+          window.setTimeout(advanceFeatureModel, 260);
+        });
+      }
+
+      window.stampedeFeatureState = state;
+      createHud();
+      createToast();
+      updateHud();
+      bindSpinButtons();
+    })();
+  </script>
+
+
+<!-- plai-symbol-icons:start -->
+<script>
+(function () {
+  document.body.classList.add('plai-game-polished');
+
+  const icons = {
+    ELE: `<svg viewBox="0 0 120 120" aria-label="Elephant" role="img"><defs><linearGradient id="eleG" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#ffe5f6"/><stop offset="1" stop-color="#bba1ff"/></linearGradient></defs><circle cx="31" cy="57" r="24" fill="#d9c4ff"/><circle cx="89" cy="57" r="24" fill="#d9c4ff"/><ellipse cx="60" cy="60" rx="34" ry="31" fill="url(#eleG)" stroke="#fff" stroke-width="5"/><path d="M58 68c10 9 7 24-4 29" fill="none" stroke="#b08ce8" stroke-width="12" stroke-linecap="round"/><circle cx="48" cy="55" r="5" fill="#25104c"/><circle cx="72" cy="55" r="5" fill="#25104c"/><path d="M44 78c9 8 23 8 32 0" fill="none" stroke="#fff" stroke-width="5" stroke-linecap="round"/><path d="M37 42l-9-9M83 42l9-9" stroke="#fff" stroke-width="5" stroke-linecap="round"/></svg>`,
+    LIO: `<svg viewBox="0 0 120 120" aria-label="Lion" role="img"><circle cx="60" cy="60" r="42" fill="#ffb12f"/><circle cx="60" cy="60" r="29" fill="#ffe27a"/><circle cx="49" cy="55" r="5" fill="#25104c"/><circle cx="71" cy="55" r="5" fill="#25104c"/><path d="M56 66h8l-4 7z" fill="#25104c"/><path d="M46 77c9 8 19 8 28 0" fill="none" stroke="#25104c" stroke-width="5" stroke-linecap="round"/><path d="M28 60h-12M104 60H92M60 28V14M60 106V92" stroke="#ff7b1f" stroke-width="9" stroke-linecap="round"/></svg>`,
+    PAR: `<svg viewBox="0 0 120 120" aria-label="Parrot" role="img"><path d="M28 82c5-35 23-54 55-52 9 1 15 9 13 18-3 18-19 34-45 48z" fill="#32d5ca"/><path d="M37 83c24-10 40-25 49-45 8 8 7 20-3 33-10 13-25 23-46 30z" fill="#ff43a6" opacity=".9"/><circle cx="77" cy="44" r="6" fill="#25104c"/><path d="M89 42l19 5-18 9z" fill="#ffe24d"/><path d="M47 90l-14 20" stroke="#25104c" stroke-width="7" stroke-linecap="round"/></svg>`,
+    BAN: `<svg viewBox="0 0 120 120" aria-label="Banana" role="img"><path d="M25 43c18 42 48 56 77 35-24 28-68 28-91-22z" fill="#ffe24d" stroke="#fff4a8" stroke-width="7" stroke-linecap="round"/><path d="M25 43l-7-8M102 78l7-3" stroke="#5a2b00" stroke-width="7" stroke-linecap="round"/></svg>`,
+    WILD: `<svg viewBox="0 0 120 120" aria-label="Wild" role="img"><path d="M60 8l13 35 37 3-29 23 9 36-30-20-31 20 10-36-29-23 37-3z" fill="#ffe24d" stroke="#fff" stroke-width="6"/><text x="60" y="70" text-anchor="middle" font-size="22" font-family="Arial Black, sans-serif" fill="#35105c">WILD</text></svg>`,
+    BONUS: `<svg viewBox="0 0 120 120" aria-label="Bonus" role="img"><rect x="22" y="36" width="76" height="60" rx="14" fill="#ff43a6" stroke="#fff" stroke-width="6"/><path d="M60 36v60M22 56h76" stroke="#ffe24d" stroke-width="8"/><path d="M46 31c-12-11-23 7-6 12M74 31c12-11 23 7 6 12" fill="none" stroke="#ffe24d" stroke-width="8" stroke-linecap="round"/></svg>`,
+    A: `<svg viewBox="0 0 120 120"><text x="60" y="78" text-anchor="middle" font-size="62" font-family="Arial Black, sans-serif" fill="#ffe24d">A</text></svg>`,
+    K: `<svg viewBox="0 0 120 120"><text x="60" y="78" text-anchor="middle" font-size="62" font-family="Arial Black, sans-serif" fill="#8cecff">K</text></svg>`,
+    Q: `<svg viewBox="0 0 120 120"><text x="60" y="78" text-anchor="middle" font-size="62" font-family="Arial Black, sans-serif" fill="#ff8fd6">Q</text></svg>`,
+    J: `<svg viewBox="0 0 120 120"><text x="60" y="78" text-anchor="middle" font-size="62" font-family="Arial Black, sans-serif" fill="#ffffff">J</text></svg>`,
+    '10': `<svg viewBox="0 0 120 120"><text x="60" y="78" text-anchor="middle" font-size="54" font-family="Arial Black, sans-serif" fill="#ffe24d">10</text></svg>`,
+    '7': `<svg viewBox="0 0 120 120"><text x="60" y="82" text-anchor="middle" font-size="76" font-family="Arial Black, sans-serif" fill="#ffe24d">7</text></svg>`
+  };
+
+  function keyFor(element) {
+    const explicit = element.getAttribute('data-symbol') || element.dataset?.symbol || element.getAttribute('aria-label');
+    const text = (explicit || element.textContent || '').trim().toUpperCase();
+    if (icons[text]) return text;
+    if (text.includes('ELE')) return 'ELE';
+    if (text.includes('LIO')) return 'LIO';
+    if (text.includes('PAR')) return 'PAR';
+    if (text.includes('BAN')) return 'BAN';
+    if (text.includes('WILD')) return 'WILD';
+    if (text.includes('BONUS')) return 'BONUS';
+    return '';
+  }
+
+  function iconise() {
+    document.querySelectorAll('.reel *, .reels *, .slot-reels *, .symbol, .reel-symbol, [data-symbol], [class*="symbol"]').forEach((element) => {
+      if (!(element instanceof HTMLElement) || element.dataset.plaiIconised === 'true') return;
+      if (element.matches('script, style, button, input, select, textarea')) return;
+      const key = keyFor(element);
+      if (!key) return;
+      element.innerHTML = icons[key];
+      element.classList.add('symbol-icon-cell');
+      element.dataset.plaiIconised = 'true';
+    });
+  }
+
+  iconise();
+  document.addEventListener('DOMContentLoaded', iconise);
+  const observer = new MutationObserver(iconise);
+  observer.observe(document.documentElement, { childList: true, subtree: true, characterData: true });
+  let ticks = 0;
+  const interval = setInterval(() => {
+    iconise();
+    ticks += 1;
+    if (ticks > 20) clearInterval(interval);
+  }, 250);
+})();
+</script>
+<!-- plai-symbol-icons:end -->
+
+<style id="plai-focused-game-polish">
+  .slice-badge,
+  .game-badge,
+  .game-kicker,
+  .game-title,
+  .hero-title,
+  .playable-slice,
+  [data-role="slice-badge"],
+  [data-role="game-title"] {
+    display: none !important;
+  }
+
+  .game-shell,
+  .slot-shell,
+  .stampede-shell,
+  .bubblegum-game,
+  .game-stage {
+    transform: scale(0.86);
+    transform-origin: top center;
+  }
+
+  .stats-grid,
+  .meter-grid,
+  .metrics-grid,
+  .hud-grid,
+  .summary-grid,
+  .game-stats {
+    display: grid !important;
+    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+    gap: 14px !important;
+  }
+
+  .stat-card,
+  .metric-card,
+  .meter-card,
+  .hud-card {
+    min-height: 92px !important;
+    padding: 18px 20px !important;
+  }
+
+  .plai-symbol-icon {
+    width: 72%;
+    height: 72%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    filter: drop-shadow(0 10px 14px rgba(27, 0, 55, 0.28));
+  }
+
+  .plai-symbol-icon svg {
+    width: 100%;
+    height: 100%;
+    display: block;
+  }
+</style>
+<script id="plai-focused-symbol-icons">
+  (() => {
+    const iconMap = {
+      ELE: `<span class="plai-symbol-icon" aria-hidden="true"><svg viewBox="0 0 120 120" role="img"><defs><linearGradient id="eleGrad" x1="0" x2="1" y1="0" y2="1"><stop stop-color="#ffe5f5"/><stop offset="1" stop-color="#b7a6ff"/></linearGradient></defs><circle cx="60" cy="60" r="54" fill="#43106e"/><path d="M31 61c-11-3-18-13-15-25 3-13 15-20 28-14 7-8 25-8 32 0 13-6 25 1 28 14 3 12-4 22-15 25 1 20-13 34-29 34S30 81 31 61Z" fill="url(#eleGrad)"/><path d="M51 54c0 11 2 30 12 30 8 0 13-12 8-20-3-5-10-5-13-1" fill="none" stroke="#7259a6" stroke-width="7" stroke-linecap="round"/><circle cx="42" cy="47" r="5" fill="#190436"/><circle cx="77" cy="47" r="5" fill="#190436"/><path d="M47 71c9 7 19 7 28 0" fill="none" stroke="#190436" stroke-width="5" stroke-linecap="round"/></svg></span>`,
+      WILD: `<span class="plai-symbol-icon" aria-hidden="true"><svg viewBox="0 0 120 120"><defs><linearGradient id="wildGrad" x1="0" x2="1"><stop stop-color="#ffe75a"/><stop offset="1" stop-color="#ff43ad"/></linearGradient></defs><path d="M60 8 73 42l36-2-29 22 13 35-33-21-33 21 13-35-29-22 36 2Z" fill="url(#wildGrad)" stroke="#fff" stroke-width="7"/><text x="60" y="69" text-anchor="middle" font-size="20" font-weight="900" fill="#2a094d">WILD</text></svg></span>`,
+      GUM: `<span class="plai-symbol-icon" aria-hidden="true"><svg viewBox="0 0 120 120"><circle cx="44" cy="60" r="30" fill="#ff43ad"/><circle cx="76" cy="60" r="30" fill="#58eadf"/><circle cx="60" cy="60" r="25" fill="#ffe75a"/><text x="60" y="68" text-anchor="middle" font-size="18" font-weight="900" fill="#2a094d">GUM</text></svg></span>`,
+      STAR: `<span class="plai-symbol-icon" aria-hidden="true"><svg viewBox="0 0 120 120"><path d="M60 9 72 45l38 1-30 22 11 37-31-22-31 22 11-37-30-22 38-1Z" fill="#ffe75a" stroke="#fff5b6" stroke-width="8"/></svg></span>`,
+      BONUS: `<span class="plai-symbol-icon" aria-hidden="true"><svg viewBox="0 0 120 120"><rect x="16" y="28" width="88" height="64" rx="18" fill="#58eadf"/><path d="M16 52h88" stroke="#2a094d" stroke-width="8"/><path d="M60 28v64" stroke="#2a094d" stroke-width="8"/><text x="60" y="75" text-anchor="middle" font-size="17" font-weight="900" fill="#2a094d">BONUS</text></svg></span>`,
+      JP: `<span class="plai-symbol-icon" aria-hidden="true"><svg viewBox="0 0 120 120"><circle cx="60" cy="60" r="48" fill="#ffe75a"/><circle cx="60" cy="60" r="36" fill="#ff8bcf"/><text x="60" y="69" text-anchor="middle" font-size="28" font-weight="900" fill="#2a094d">JP</text></svg></span>`
+    };
+
+    function hydrateSymbols(root = document) {
+      const walker = document.createTreeWalker(root.body || root, NodeFilter.SHOW_ELEMENT);
+      const nodes = [];
+      while (walker.nextNode()) nodes.push(walker.currentNode);
+      nodes.forEach((node) => {
+        if (node.dataset?.plaiSymbolIcon || node.children.length > 0) return;
+        const key = (node.textContent || "").trim().toUpperCase();
+        if (!iconMap[key]) return;
+        node.dataset.plaiSymbolIcon = key;
+        node.setAttribute("aria-label", key);
+        node.innerHTML = iconMap[key];
+      });
+    }
+
+    hydrateSymbols();
+    new MutationObserver(() => hydrateSymbols()).observe(document.body, {
+      childList: true,
+      subtree: true,
+      characterData: true
+    });
+  })();
+</script>
+</body>
 </html>

@@ -41,6 +41,18 @@ assert(
   plaiScript.includes("setupExclusiveGameLauncher"),
   "Exclusive game launcher must be wired in the client script."
 );
+assert(
+  plaiScript.includes("window.openBubblegumStampede"),
+  "Bubblegum Stampede launcher must be exposed for all game-card launches."
+);
+assert(
+  plaiScript.includes("[data-play-url]"),
+  "Generated game cards with play URLs must be routed into Bubblegum Stampede."
+);
+assert(
+  plaiScript.includes("plai-bubblegum-launch-style"),
+  "Bubblegum Stampede launcher must inject its modal styling from the loaded script."
+);
 
 for (const entryPoint of ["index.html", "impossible.html"]) {
   const entryHtml = readWorkspaceFile(entryPoint);

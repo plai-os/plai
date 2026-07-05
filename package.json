@@ -6,7 +6,7 @@
   "scripts": {
     "start": "node server/plai-api.js",
     "dev": "node server/plai-api.js",
-    "test": "node tests/site-routes.test.js"
+    "test": "node tests/site-routes.test.js && node tests/bubblegum-stampede.test.js"
   },
   "dependencies": {
     "pg": "^8.13.1"
