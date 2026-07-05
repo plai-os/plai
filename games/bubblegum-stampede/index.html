@@ -18,9 +18,15 @@
 
     * { box-sizing: border-box; }
 
+    html,
+    body {
+      width: 100%;
+      height: 100%;
+      min-height: 0;
+    }
+
     body {
       margin: 0;
-      min-height: 100vh;
       color: white;
       background:
         radial-gradient(circle at 12% 12%, rgba(255, 233, 91, 0.24), transparent 18%),
@@ -32,11 +38,13 @@
     button { font: inherit; }
 
     .game-shell {
-      min-height: 100vh;
-      padding: clamp(14px, 2.4vw, 28px);
+      height: 100vh;
+      min-height: 0;
+      padding: clamp(10px, 1.8vw, 22px);
       display: grid;
-      grid-template-rows: auto 1fr;
-      gap: 16px;
+      grid-template-rows: auto minmax(0, 1fr);
+      gap: 12px;
+      overflow: hidden;
     }
 
     .meter-header,
@@ -49,7 +57,7 @@
     }
 
     .meter-header {
-      padding: 14px;
+      padding: 10px;
     }
 
     .stats {
@@ -60,8 +68,8 @@
     }
 
     .stat {
-      min-height: 72px;
-      padding: 12px;
+      min-height: 62px;
+      padding: 10px;
       border-radius: 16px;
       background: var(--panel);
     }
@@ -77,27 +85,28 @@
     .stat strong {
       display: block;
       margin-top: 4px;
-      font-size: 28px;
+      font-size: clamp(22px, 2.1vw, 28px);
       line-height: 1;
     }
 
     .game-board {
       min-height: 0;
       display: grid;
-      grid-template-columns: minmax(0, 1fr) minmax(280px, 340px);
-      gap: 16px;
+      grid-template-columns: minmax(0, 1fr) minmax(260px, 320px);
+      gap: 12px;
     }
 
     .reel-panel {
       min-height: 0;
-      padding: clamp(12px, 2vw, 22px);
+      overflow: hidden;
+      padding: clamp(10px, 1.5vw, 18px);
       display: grid;
-      grid-template-rows: auto 1fr;
-      gap: 14px;
+      grid-template-rows: auto minmax(0, 1fr);
+      gap: 12px;
     }
 
     .message-strip {
-      min-height: 56px;
+      min-height: 48px;
       display: flex;
       align-items: center;
       justify-content: space-between;
@@ -105,7 +114,7 @@
       padding: 12px 16px;
       border-radius: 16px;
       background: var(--panel);
-      font-size: clamp(17px, 2vw, 26px);
+      font-size: clamp(16px, 1.8vw, 24px);
       font-weight: 950;
     }
 
@@ -121,12 +130,13 @@
     }
 
     .reel-grid {
-      min-height: 390px;
+      min-height: 0;
+      height: 100%;
       display: grid;
-      grid-template-columns: repeat(5, minmax(72px, 1fr));
-      grid-template-rows: repeat(4, minmax(66px, 1fr));
-      gap: clamp(8px, 1.2vw, 12px);
-      padding: clamp(10px, 1.6vw, 16px);
+      grid-template-columns: repeat(5, minmax(56px, 1fr));
+      grid-template-rows: repeat(4, minmax(0, 1fr));
+      gap: clamp(6px, 0.9vw, 10px);
+      padding: clamp(8px, 1.2vw, 12px);
       border: 2px solid rgba(255,255,255,0.22);
       border-radius: 22px;
       background: rgba(27, 5, 58, 0.74);
@@ -136,6 +146,7 @@
       display: grid;
       place-items: center;
       min-width: 0;
+      min-height: 0;
       border-radius: 18px;
       overflow: hidden;
       color: var(--ink);
@@ -159,13 +170,15 @@
     .wild { background: linear-gradient(135deg, #fff8a8, #ffe95b); }
 
     .control-panel {
-      padding: 18px;
+      min-height: 0;
+      overflow: hidden;
+      padding: 16px;
       display: grid;
       align-content: start;
-      gap: 14px;
+      gap: 12px;
     }
 
-    .control-panel h2 { margin: 0; font-size: 24px; }
+    .control-panel h2 { margin: 0; font-size: clamp(20px, 1.8vw, 24px); }
 
     .bet-row {
       display: grid;
@@ -185,7 +198,7 @@
 
     .round-btn { min-height: 52px; background: rgba(255,255,255,0.92); color: var(--ink); font-size: 24px; }
     .bet-value { min-height: 52px; display: grid; place-items: center; border-radius: 16px; background: var(--panel); font-size: 24px; font-weight: 950; }
-    .spin-button { min-height: 72px; background: linear-gradient(135deg, var(--yellow), #ffb64d); color: var(--ink); font-size: 28px; text-transform: uppercase; }
+    .spin-button { min-height: 64px; background: linear-gradient(135deg, var(--yellow), #ffb64d); color: var(--ink); font-size: 28px; text-transform: uppercase; }
     .spin-button:disabled, .round-btn:disabled { opacity: 0.62; cursor: wait; }
 
     .feature-list { display: grid; gap: 10px; margin: 0; padding: 0; list-style: none; }
@@ -193,9 +206,11 @@
 
     @media (max-width: 900px) {
       body { overflow: auto; }
+      .game-shell { height: auto; min-height: 100vh; overflow: visible; }
       .stats { width: 100%; grid-template-columns: repeat(3, 1fr); }
       .game-board { grid-template-columns: 1fr; }
       .reel-grid { min-height: 320px; grid-template-columns: repeat(5, minmax(52px, 1fr)); grid-template-rows: repeat(4, 58px); }
+      .control-panel { overflow: visible; }
     }
   </style>
 </head>
@@ -333,8 +348,9 @@
         const rows = [0, 1, 2, 3];
         let win = 0;
         const winning = [];
+        const wins = [];
         rows.forEach((row) => {
-          const indexes = [0, 1, 2, 3, 4].map((col) => row + col * 4);
+          const indexes = [0, 1, 2, 3, 4].map((col) => row * 5 + col);
           const line = indexes.map((index) => cells[index]);
           const first = line[0].wild ? line.find((symbol) => !symbol.wild) || line[0] : line[0];
           let count = 0;
@@ -349,9 +365,10 @@
             const amount = (first.pay[count] || 0) * bet();
             win += amount;
             winning.push(...indexes.slice(0, count));
+            wins.push({ row: row + 1, count, name: first.name, amount });
           }
         });
-        return { win, winning };
+        return { win, winning, wins };
       }
 
       function updateStats() {
@@ -386,7 +403,14 @@
           state.totalWon += result.win;
           state.balance += result.win;
           render(cells, result.winning);
-          nodes.message.textContent = result.win > 0 ? "Payline win: " + money(result.win) : "No win this spin. Try again.";
+          if (result.win > 0) {
+            const firstWin = result.wins[0];
+            nodes.message.textContent = result.wins.length === 1
+              ? "Line " + firstWin.row + ": " + firstWin.count + "x " + firstWin.name + " from left paid " + money(firstWin.amount) + "."
+              : result.wins.length + " paylines paid " + money(result.win) + ". First: line " + firstWin.row + " with " + firstWin.count + "x " + firstWin.name + ".";
+          } else {
+            nodes.message.textContent = "No win this spin. Try again.";
+          }
           updateStats();
           state.spinning = false;
           spinButton.disabled = false;
