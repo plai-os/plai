@@ -1485,6 +1485,7 @@ window.addEventListener("impossible:analytics-event", scheduleAiUxRender);
 initialisePrototype();
 
 function initialisePrototype() {
+  safeStartupStep("release badge", installReleaseBadge);
   safeStartupStep("route", updateRoute);
   safeStartupStep("brand", applySelectedBrand);
   safeStartupStep("language", applySiteLanguage);
@@ -1512,6 +1513,27 @@ function initialisePrototype() {
   );
   safeStartupStep("offer experiment", () => initialiseHomepageOffer("startup"));
   safeStartupStep("PlayAI panels", renderAiUxViews);
+}
+
+function installReleaseBadge() {
+  const version = new URLSearchParams(window.location.search).get("v") || "local";
+  const styleId = "plai-release-badge-style";
+  if (!document.getElementById(styleId)) {
+    const style = document.createElement("style");
+    style.id = styleId;
+    style.textContent = [
+      ".plai-release-badge { position: fixed; right: 10px; bottom: 8px; z-index: 11050; padding: 4px 7px; border: 1px solid rgba(255,255,255,0.22); border-radius: 999px; background: rgba(18,5,42,0.72); color: rgba(255,255,255,0.82); font-size: 10px; font-weight: 800; letter-spacing: 0; line-height: 1; pointer-events: none; box-shadow: 0 8px 22px rgba(18,5,42,0.34); }"
+    ].join("\n");
+    document.head.appendChild(style);
+  }
+  let badge = document.querySelector("[data-release-badge]");
+  if (!badge) {
+    badge = document.createElement("div");
+    badge.className = "plai-release-badge";
+    badge.dataset.releaseBadge = "";
+    document.body.appendChild(badge);
+  }
+  badge.textContent = "release " + version;
 }
 
 function safeStartupStep(name, step) {
@@ -3773,7 +3795,7 @@ function openBubblegumStampedeModal() {
     modal.setAttribute("role", "dialog");
     modal.setAttribute("aria-modal", "true");
     modal.setAttribute("aria-label", "Bubblegum Stampede");
-    const gameUrl = new URL("games/bubblegum-stampede/index.html?v=20260705-square-symbols", window.location.href).toString();
+    const gameUrl = new URL("games/bubblegum-stampede/index.html?v=20260705-square-scroll", window.location.href).toString();
     modal.innerHTML = [
       '<div class="plai-bubblegum-game-shell" role="document">',
       '<div class="plai-bubblegum-game-bar">',
