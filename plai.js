@@ -1476,6 +1476,9 @@ document.addEventListener("drop", handleDrop);
 window.addEventListener("hashchange", updateRoute);
 document.addEventListener("keydown", handleRegistrationKeydown);
 document.addEventListener("keydown", handleGameCardKeydown);
+document.addEventListener("keydown", (event) => {
+  if (event.key === "Escape") closeBubblegumStampedeModal();
+});
 window.addEventListener("plai:analytics-event", scheduleAiUxRender);
 window.addEventListener("impossible:analytics-event", scheduleAiUxRender);
 
@@ -3739,6 +3742,59 @@ function repeatedClickTargetDetails(target) {
   };
 }
 
+function closeBubblegumStampedeModal() {
+  document.getElementById("plai-bubblegum-game-modal")?.remove();
+  document.body.classList.remove("plai-bubblegum-game-open");
+}
+
+function openBubblegumStampedeModal() {
+  const styleId = "plai-bubblegum-game-style";
+  if (!document.getElementById(styleId)) {
+    const style = document.createElement("style");
+    style.id = styleId;
+    style.textContent = [
+      ".plai-bubblegum-game-modal { position: fixed; inset: 0; z-index: 10000; display: grid; place-items: center; padding: clamp(14px, 2.5vw, 36px); background: rgba(18, 5, 42, 0.84); backdrop-filter: blur(12px); }",
+      ".plai-bubblegum-game-shell { width: min(96vw, 1480px); height: min(90vh, 920px); overflow: hidden; border: 1px solid rgba(255,255,255,0.28); border-radius: 22px; background: #2b0a65; box-shadow: 0 30px 90px rgba(18, 5, 42, 0.55); }",
+      ".plai-bubblegum-game-bar { height: 68px; display: flex; align-items: center; gap: 14px; padding: 0 20px; color: #fff; background: linear-gradient(90deg, #42107b, #ff43ad); }",
+      ".plai-bubblegum-game-pill { display: inline-flex; align-items: center; min-height: 28px; padding: 0 10px; background: #ffe95b; color: #211247; font-size: 13px; font-weight: 950; text-transform: uppercase; }",
+      ".plai-bubblegum-game-title { min-width: 0; font-size: clamp(20px, 2vw, 28px); font-weight: 950; line-height: 1; }",
+      ".plai-bubblegum-game-close { width: 48px; height: 48px; margin-left: auto; border: 0; border-radius: 999px; display: grid; place-items: center; color: #fff; background: rgba(255,255,255,0.2); font-size: 32px; font-weight: 900; cursor: pointer; }",
+      ".plai-bubblegum-game-frame { display: block; width: 100%; height: calc(100% - 68px); border: 0; background: #2b0a65; }",
+      "body.plai-bubblegum-game-open { overflow: hidden; }"
+    ].join("\n");
+    document.head.appendChild(style);
+  }
+
+  let modal = document.getElementById("plai-bubblegum-game-modal");
+  if (!modal) {
+    modal = document.createElement("div");
+    modal.id = "plai-bubblegum-game-modal";
+    modal.className = "plai-bubblegum-game-modal";
+    modal.setAttribute("role", "dialog");
+    modal.setAttribute("aria-modal", "true");
+    modal.setAttribute("aria-label", "Bubblegum Stampede");
+    const gameUrl = new URL("games/bubblegum-stampede/index.html?v=20260705-game", window.location.href).toString();
+    modal.innerHTML = [
+      '<div class="plai-bubblegum-game-shell" role="document">',
+      '<div class="plai-bubblegum-game-bar">',
+      '<span class="plai-bubblegum-game-pill">Exclusive</span>',
+      '<strong class="plai-bubblegum-game-title">Bubblegum Stampede</strong>',
+      '<button class="plai-bubblegum-game-close" type="button" aria-label="Close Bubblegum Stampede">&times;</button>',
+      '</div>',
+      '<iframe class="plai-bubblegum-game-frame" title="Bubblegum Stampede" src="' + gameUrl + '" loading="eager" allow="autoplay; fullscreen"></iframe>',
+      '</div>'
+    ].join("");
+    document.body.appendChild(modal);
+    modal.addEventListener("click", (event) => {
+      if (event.target === modal || event.target.closest(".plai-bubblegum-game-close")) {
+        closeBubblegumStampedeModal();
+      }
+    });
+  }
+  document.body.classList.add("plai-bubblegum-game-open");
+  window.requestAnimationFrame(() => modal.querySelector("iframe")?.focus?.());
+}
+
 function handleGameNavigation(event) {
   const card = event.target.closest("[data-play-url]");
   if (!card) return;
@@ -3764,7 +3820,7 @@ function handleGameNavigation(event) {
     `game-${gameCard?.dataset.gameId || "unknown"}`,
     properties
   );
-  openLoginModal();
+  openBubblegumStampedeModal();
 }
 
 function handleGameCardKeydown(event) {
