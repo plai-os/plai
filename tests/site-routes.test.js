@@ -65,6 +65,14 @@ assert(
   !plaiScript.includes("function findGameCard(node)"),
   "Bubblegum launcher must not install a broad document-wide game-card click catcher."
 );
+assert(
+  plaiScript.includes("safeStartupStep(\"demo catalogue\", renderDemoCatalogue);"),
+  "Startup must render the demo catalogue before any async catalogue fetch can stall the page."
+);
+assert(
+  plaiScript.includes("if (!force) {\n    currentGames = fallbackGames;"),
+  "Automatic catalogue loading must use the stable fallback catalogue unless refresh is forced."
+);
 
 for (const entryPoint of ["index.html", "impossible.html"]) {
   const entryHtml = readWorkspaceFile(entryPoint);

@@ -1488,6 +1488,7 @@ function initialisePrototype() {
   safeStartupStep("route", updateRoute);
   safeStartupStep("brand", applySelectedBrand);
   safeStartupStep("language", applySiteLanguage);
+  safeStartupStep("demo catalogue", renderDemoCatalogue);
   loadGames().catch((error) => {
     console.warn("Catalogue startup skipped:", error);
     currentGames = fallbackGames;
@@ -1695,14 +1696,28 @@ function gameCountLabel(count) {
   return `${count} ${t("gamesCount")}`;
 }
 
+function renderDemoCatalogue() {
+  currentGames = fallbackGames;
+  renderSite();
+  setStatus(t("fallbackContent"), gameCountLabel(currentGames.length));
+}
+
 async function loadGames({ force = false } = {}) {
   setStatus(t("loadingGames"));
   if (force) {
     viewedGameImpressionKeys.clear();
   }
 
+  builderState = await readBuilderState();
+
+  if (!force) {
+    currentGames = fallbackGames;
+    renderSite();
+    setStatus(t("fallbackContent"), gameCountLabel(currentGames.length));
+    return;
+  }
+
   try {
-    builderState = await readBuilderState();
     const cached = force ? null : await readCachedGames();
     const games = cached || await requestStaticCatalogue();
     const playableGames = normaliseGames(games);
