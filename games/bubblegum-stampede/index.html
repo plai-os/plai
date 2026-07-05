@@ -138,10 +138,15 @@
       min-width: 0;
       border-radius: 18px;
       color: var(--ink);
-      font-size: clamp(15px, 1.8vw, 28px);
-      font-weight: 950;
       box-shadow: inset 0 -9px 0 rgba(0,0,0,0.1), 0 10px 22px rgba(28, 6, 65, 0.24);
       user-select: none;
+    }
+
+    .symbol svg {
+      width: min(76%, 96px);
+      height: min(76%, 96px);
+      display: block;
+      filter: drop-shadow(0 8px 8px rgba(24, 4, 43, 0.24));
     }
 
     .symbol.is-win { outline: 4px solid var(--yellow); transform: scale(1.04); }
@@ -221,7 +226,7 @@
         <button class="spin-button" id="spinButton" type="button">Spin</button>
         <ul class="feature-list">
           <li>Three or more matching symbols pay from left to right.</li>
-          <li>Wild GUM symbols boost the cascade multiplier.</li>
+          <li>Wild symbols substitute on left-to-right paylines.</li>
           <li>Bonus stars trigger a bright free-spin tease.</li>
         </ul>
       </aside>
@@ -231,11 +236,55 @@
   <script>
     (() => {
       const symbols = [
-        { label: "GUM", className: "gum", pay: 8 },
-        { label: "POP", className: "pop", pay: 6 },
-        { label: "COIN", className: "coin", pay: 5 },
-        { label: "MINT", className: "mint", pay: 4 },
-        { label: "WILD", className: "wild", pay: 10 }
+        {
+          id: "ele",
+          name: "Bubblegum Elephant",
+          className: "mint",
+          weight: 4,
+          pay: { 3: 4.55, 4: 18.18, 5: 81.81 },
+          icon: '<svg viewBox="0 0 120 120" role="img" aria-label="Bubblegum Elephant"><circle cx="30" cy="58" r="22" fill="#d7e8ff"/><circle cx="90" cy="58" r="22" fill="#d7e8ff"/><ellipse cx="60" cy="62" rx="34" ry="30" fill="#f0f6ff"/><path d="M58 68c9 8 6 22-5 27" fill="none" stroke="#9eb8df" stroke-width="11" stroke-linecap="round"/><circle cx="48" cy="56" r="5" fill="#211247"/><circle cx="72" cy="56" r="5" fill="#211247"/><path d="M45 78c9 7 21 7 30 0" fill="none" stroke="#211247" stroke-width="5" stroke-linecap="round"/></svg>'
+        },
+        {
+          id: "star",
+          name: "Sugar Star",
+          className: "wild",
+          weight: 6,
+          pay: { 3: 3.27, 4: 12.73, 5: 54.54 },
+          icon: '<svg viewBox="0 0 120 120" role="img" aria-label="Sugar Star"><path d="M60 9 73 44l37 2-29 22 10 36-31-21-31 21 10-36-29-22 37-2Z" fill="#ffe95b" stroke="#fff7b0" stroke-width="7"/><circle cx="47" cy="57" r="5" fill="#211247"/><circle cx="73" cy="57" r="5" fill="#211247"/></svg>'
+        },
+        {
+          id: "gum",
+          name: "Bubblegum",
+          className: "gum",
+          weight: 14,
+          pay: { 3: 1.09, 4: 4, 5: 16.36 },
+          icon: '<svg viewBox="0 0 120 120" role="img" aria-label="Bubblegum"><circle cx="43" cy="62" r="28" fill="#ff8ed1"/><circle cx="74" cy="56" r="25" fill="#ff43ad"/><circle cx="61" cy="72" r="22" fill="#ffe95b"/><circle cx="78" cy="43" r="8" fill="#fff" opacity=".72"/></svg>'
+        },
+        {
+          id: "mint",
+          name: "Mint Swirl",
+          className: "mint",
+          weight: 22,
+          pay: { 3: 0.82, 4: 2.73, 5: 10.91 },
+          icon: '<svg viewBox="0 0 120 120" role="img" aria-label="Mint Swirl"><circle cx="60" cy="60" r="42" fill="#60eadb"/><path d="M60 18c23 18 25 52 1 83M102 60c-18 23-52 25-83 1" fill="none" stroke="#fff" stroke-width="12" stroke-linecap="round"/><circle cx="60" cy="60" r="18" fill="#37bfe8"/></svg>'
+        },
+        {
+          id: "coin",
+          name: "Candy Coin",
+          className: "coin",
+          weight: 22,
+          pay: { 3: 0.82, 4: 2.73, 5: 10.91 },
+          icon: '<svg viewBox="0 0 120 120" role="img" aria-label="Candy Coin"><circle cx="60" cy="60" r="42" fill="#ffe95b"/><circle cx="60" cy="60" r="29" fill="#ffb85a"/><path d="M45 62h30M60 42v38" stroke="#211247" stroke-width="9" stroke-linecap="round"/></svg>'
+        },
+        {
+          id: "wild",
+          name: "Walking Wild",
+          className: "pop",
+          weight: 2,
+          wild: true,
+          pay: {},
+          icon: '<svg viewBox="0 0 120 120" role="img" aria-label="Walking Wild"><path d="M63 7 19 66h32l-9 47 58-68H67Z" fill="#ffe95b" stroke="#fff" stroke-width="7" stroke-linejoin="round"/><path d="M42 72h22" stroke="#211247" stroke-width="8" stroke-linecap="round"/></svg>'
+        }
       ];
       const betSteps = [1, 2, 5, 10];
       const state = { balance: 1000, totalWon: 0, lastWin: 0, betIndex: 1, multiplier: 1, spinning: false };
@@ -253,7 +302,8 @@
       };
 
       function bet() { return betSteps[state.betIndex]; }
-      function pickSymbol() { return symbols[Math.floor(Math.random() * symbols.length)]; }
+      const weightedSymbols = symbols.flatMap((symbol) => Array.from({ length: symbol.weight }, () => symbol));
+      function pickSymbol() { return weightedSymbols[Math.floor(Math.random() * weightedSymbols.length)]; }
       function format(value) { return String(Math.round(value)); }
       function money(value) { return new Intl.NumberFormat("en-GB", { style: "currency", currency: "GBP" }).format(value); }
 
@@ -266,7 +316,8 @@
         grid.replaceChildren(...cells.map((symbol, index) => {
           const cell = document.createElement("div");
           cell.className = "symbol " + symbol.className + (wins.has(index) ? " is-win" : "");
-          cell.textContent = symbol.label;
+          cell.setAttribute("aria-label", symbol.name);
+          cell.innerHTML = symbol.icon;
           return cell;
         }));
       }
@@ -278,13 +329,17 @@
         rows.forEach((row) => {
           const indexes = [0, 1, 2, 3, 4].map((col) => row + col * 4);
           const line = indexes.map((index) => cells[index]);
-          const first = line[0].label === "WILD" ? line.find((symbol) => symbol.label !== "WILD") || line[0] : line[0];
+          const first = line[0].wild ? line.find((symbol) => !symbol.wild) || line[0] : line[0];
           let count = 0;
-          line.forEach((symbol) => {
-            if (symbol.label === first.label || symbol.label === "WILD") count += 1;
-          });
+          for (const symbol of line) {
+            if (symbol.id === first.id || symbol.wild) {
+              count += 1;
+            } else {
+              break;
+            }
+          }
           if (count >= 3) {
-            const amount = first.pay * count * bet() * state.multiplier;
+            const amount = (first.pay[count] || 0) * bet();
             win += amount;
             winning.push(...indexes.slice(0, count));
           }
@@ -315,7 +370,7 @@
         state.balance = Math.max(0, state.balance - bet());
         state.lastWin = 0;
         nodes.message.textContent = "Stampede spinning...";
-        state.multiplier = 1 + Math.floor(Math.random() * 3);
+        state.multiplier = 1;
         const cells = makeGrid();
         render(cells);
         window.setTimeout(() => {
@@ -324,7 +379,7 @@
           state.totalWon += result.win;
           state.balance += result.win;
           render(cells, result.winning);
-          nodes.message.textContent = result.win > 0 ? "Cascade win: " + format(result.win) : "No win this spin. Try again.";
+          nodes.message.textContent = result.win > 0 ? "Payline win: " + money(result.win) : "No win this spin. Try again.";
           updateStats();
           state.spinning = false;
           spinButton.disabled = false;
