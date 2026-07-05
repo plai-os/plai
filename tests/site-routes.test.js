@@ -16,6 +16,7 @@ function assert(condition, message) {
 
 const plaiHtml = readWorkspaceFile("plai.html");
 const plaiScript = readWorkspaceFile("plai.js");
+const directLauncherScript = readWorkspaceFile("plai-direct-launcher.js");
 
 assert(
   plaiHtml.includes('data-route-link="exclusive"'),
@@ -60,6 +61,18 @@ assert(
 assert(
   plaiScript.includes("event?.preventDefault?.();"),
   "Exclusive route launch buttons must be intercepted before the legacy empty modal opens."
+);
+assert(
+  plaiHtml.includes("plai-direct-launcher.js?v=20260705-direct"),
+  "The HTML page must load the final direct Bubblegum launcher after the app script."
+);
+assert(
+  directLauncherScript.includes("event.stopImmediatePropagation();"),
+  "Direct launcher must stop older login and exclusive modal handlers from taking over game-card clicks."
+);
+assert(
+  directLauncherScript.includes("games/bubblegum-stampede/index.html?v=20260705-direct"),
+  "Direct launcher must load the cache-busted Bubblegum Stampede game iframe."
 );
 
 for (const entryPoint of ["index.html", "impossible.html"]) {
