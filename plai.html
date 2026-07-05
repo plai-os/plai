@@ -68,6 +68,7 @@
           <a href="#games" data-route-link="games" data-i18n="navGames">Games</a>
           <a href="#live" data-route-link="live" data-i18n="navLive">Live Casino</a>
           <a href="#bingo" data-route-link="bingo" data-i18n="navBingo">Bingo</a>
+          <a href="#exclusive" data-route-link="exclusive" data-i18n="navExclusive">Exclusive</a>
           <a href="#lotteries" data-route-link="lotteries" data-i18n="navLotteries">Lotteries</a>
           <a href="#help" data-route-link="help" data-i18n="navHelp">Help Centre</a>
         </nav>
@@ -300,6 +301,44 @@
           </div>
           <div class="lobby-groups" data-grid="bingo"></div>
         </section>
+
+        <section class="exclusive-lobby-section" id="exclusive" data-page="exclusive">
+          <div class="exclusive-rail-label" data-i18n="navExclusive">Exclusive</div>
+          <div class="exclusive-carousel-shell">
+            <div class="exclusive-carousel-heading">
+              <h2>Plai exclusives</h2>
+              <button class="button button-pink" type="button" data-exclusive-game-launch>Launch game</button>
+            </div>
+            <div class="exclusive-game-rail" role="list">
+              <button class="exclusive-game-tile" type="button" data-exclusive-game-launch role="listitem" aria-label="Launch Bubblegum Stampede">
+                <span class="type-badge type-badge-exclusive">Exclusive</span>
+                <div class="exclusive-game-tile__art" aria-hidden="true">
+                  <span class="exclusive-game-tile__jackpot">777</span>
+                  <span class="exclusive-game-tile__orb exclusive-game-tile__orb--one"></span>
+                  <span class="exclusive-game-tile__orb exclusive-game-tile__orb--two"></span>
+                  <span class="exclusive-game-tile__orb exclusive-game-tile__orb--three"></span>
+                </div>
+                <div class="exclusive-game-tile__body">
+                  <strong>Bubblegum Stampede</strong>
+                  <span>Plai Studios</span>
+                </div>
+              </button>
+            </div>
+          </div>
+        </section>
+
+        <div class="exclusive-game-modal" data-exclusive-game-modal hidden>
+          <div class="exclusive-game-modal__panel" role="dialog" aria-modal="true" aria-label="Bubblegum Stampede">
+            <div class="exclusive-game-modal__bar">
+              <div class="exclusive-game-modal__title">
+                <span class="type-badge type-badge-exclusive">Exclusive</span>
+                <strong>Bubblegum Stampede</strong>
+              </div>
+              <button class="exclusive-game-modal__close" type="button" data-exclusive-game-close aria-label="Close game">&times;</button>
+            </div>
+            <iframe class="exclusive-game-modal__frame" src="./games/bubblegum-stampede/index.html" title="Bubblegum Stampede"></iframe>
+          </div>
+        </div>
 
         <section class="account-panel" id="account" data-page="account">
           <div>
