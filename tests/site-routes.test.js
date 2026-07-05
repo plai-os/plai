@@ -63,8 +63,8 @@ assert(
   "Exclusive route launch buttons must be intercepted before the legacy empty modal opens."
 );
 assert(
-  plaiHtml.includes("plai-direct-launcher.js?v=20260705-direct"),
-  "The HTML page must load the final direct Bubblegum launcher after the app script."
+  plaiHtml.includes("plai-direct-launcher-inline"),
+  "The HTML page must inline the final direct Bubblegum launcher after the app script."
 );
 assert(
   directLauncherScript.includes("event.stopImmediatePropagation();"),
@@ -88,3 +88,8 @@ for (const entryPoint of ["index.html", "impossible.html"]) {
 }
 
 console.log("Site route checks passed.");
+
+assert(
+  plaiHtml.includes("event.stopImmediatePropagation();"),
+  "Inline direct launcher must be present in the deployed HTML."
+);
