@@ -10,6 +10,7 @@ const ROUTES = new Set([
   "games",
   "live",
   "bingo",
+  "exclusive",
   "lotteries",
   "promos",
   "help",
@@ -142,6 +143,7 @@ const SITE_TRANSLATIONS = {
     navGames: "Juegos",
     navLive: "Casino en vivo",
     navBingo: "Bingo",
+    navExclusive: "Exclusivo",
     navLotteries: "Loterías",
     navPromotions: "Promociones",
     navHelp: "Centro de ayuda",
@@ -439,6 +441,7 @@ const ROUTE_LABELS = {
   games: "Games",
   live: "Live Casino",
   bingo: "Bingo",
+  exclusive: "Exclusive",
   lotteries: "Lotteries",
   promos: "Promotions",
   help: "Help Centre",
@@ -8677,4 +8680,41 @@ function escapeHtml(value) {
     .replaceAll("<", "&lt;")
     .replaceAll(">", "&gt;")
     .replaceAll('"', "&quot;");
+}
+
+function setupExclusiveGameLauncher() {
+  const modal = document.querySelector("[data-exclusive-game-modal]");
+  if (!modal || modal.dataset.exclusiveLauncherReady === "true") return;
+
+  const launchers = document.querySelectorAll("[data-exclusive-game-launch]");
+  const closers = modal.querySelectorAll("[data-exclusive-game-close]");
+  if (!launchers.length) return;
+
+  modal.dataset.exclusiveLauncherReady = "true";
+
+  const open = () => {
+    modal.hidden = false;
+    document.body.classList.add("exclusive-game-open");
+    window.requestAnimationFrame(() => modal.querySelector("iframe")?.focus?.());
+  };
+
+  const close = () => {
+    modal.hidden = true;
+    document.body.classList.remove("exclusive-game-open");
+  };
+
+  launchers.forEach((launcher) => launcher.addEventListener("click", open));
+  closers.forEach((closer) => closer.addEventListener("click", close));
+  modal.addEventListener("click", (event) => {
+    if (event.target === modal) close();
+  });
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape" && !modal.hidden) close();
+  });
+}
+
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", setupExclusiveGameLauncher);
+} else {
+  setupExclusiveGameLauncher();
 }
