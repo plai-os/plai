@@ -516,6 +516,7 @@
       const targetRtp = 94;
       const state = { balance: 1000, totalWon: 0, totalStaked: 0, lastWin: 0, betIndex: 1, multiplier: 1, freeSpins: 0, spinning: false, spins: 0, hitSpins: 0, lastCascadeCount: 0, featureActive: false, featureStartSpins: 0, featureWin: 0, biggestWin: 0, optimisationApplied: false };
       let overlayTimer = 0;
+      let currentCells = [];
       const shell = document.querySelector(".game-shell");
       const grid = document.getElementById("reelGrid");
       const spinButton = document.getElementById("spinButton");
@@ -572,6 +573,7 @@
       }
 
       function render(cells, winning = [], fresh = [], walking = [], spinning = [], locking = []) {
+        currentCells = cells.slice();
         grid.classList.remove("is-rolling");
         const wins = new Set(winning);
         const freshCells = new Set(fresh);
@@ -730,7 +732,7 @@
         updateInsights();
       }
 
-      async function spinReelsToResult(finalCells, isFreeSpin) {
+      async function spinReelsToResult(startCells, finalCells, isFreeSpin) {
         nodes.message.textContent = isFreeSpin ? "Free spin reels rolling..." : "Reels rolling...";
         grid.classList.add("is-rolling");
         grid.replaceChildren();
@@ -741,10 +743,12 @@
           const strip = document.createElement("div");
           strip.className = "reel-strip";
           const fillerCount = 12 + col * 4;
-          strip.dataset.rollSteps = String(fillerCount);
-          strip.style.transitionDuration = 900 + col * 260 + "ms";
+          strip.dataset.rollSteps = String(fillerCount + 4);
+          strip.style.transitionDuration = 980 + col * 260 + "ms";
           strip.style.transitionDelay = col * 95 + "ms";
-          const stripSymbols = Array.from({ length: fillerCount }, () => pickSymbol());
+          const stripSymbols = [];
+          for (let row = 0; row < 4; row += 1) stripSymbols.push(startCells[row * 5 + col]);
+          stripSymbols.push(...Array.from({ length: fillerCount }, () => pickSymbol()));
           for (let row = 0; row < 4; row += 1) stripSymbols.push(finalCells[row * 5 + col]);
           stripSymbols.forEach((symbol) => strip.appendChild(makeSymbolNode(symbol)));
           column.appendChild(strip);
@@ -788,8 +792,9 @@
         state.lastWin = 0;
         nodes.message.textContent = isFreeSpin ? "Free spin stampede..." : "Stampede spinning...";
         state.multiplier = 1;
+        const startCells = currentCells.length === 20 ? currentCells.slice() : makeGrid();
         let cells = makeGrid();
-        await spinReelsToResult(cells, isFreeSpin);
+        await spinReelsToResult(startCells, cells, isFreeSpin);
         let spinWin = 0;
         let cascade = 0;
         render(cells);
@@ -888,7 +893,8 @@
         return '<div class="info-grid"><div class="info-card"><span>Phase</span><strong>AAA demo sprint</strong></div><div class="info-card"><span>Features</span><strong>Cascades + free spins</strong></div><div class="info-card"><span>Wild feature</span><strong>Cheeky monkey step</strong></div><div class="info-card"><span>Assets</span><strong>Animal symbol set</strong></div><div class="info-card"><span>RTP target</span><strong>94%</strong></div><div class="info-card"><span>Volatility</span><strong>Medium</strong></div></div><p class="info-copy">Plai AI recommendation: current maths is close enough for demo review. Next tune reel strips with larger simulations, continue tuning line-by-line win count-up and wire applied recommendations back into the creator workflow.</p>';
       }
 
-      render(makeGrid());
+      currentCells = makeGrid();
+      render(currentCells);
       updateStats();
       spinButton.addEventListener("click", spin);
       betDown.addEventListener("click", () => changeBet(-1));
