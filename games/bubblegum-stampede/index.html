@@ -180,7 +180,7 @@
 
     .symbol.is-win { outline: 4px solid var(--yellow); transform: scale(1.04); }
     .symbol.is-new { animation: symbolDrop 220ms ease-out both; }
-    .symbol.is-spinning { animation: reelPulse 180ms ease-in-out both; }
+    .symbol.is-spinning { animation: reelSweep 620ms cubic-bezier(.2,.78,.18,1) both; animation-delay: var(--spin-delay, 0ms); }
     .symbol.is-walking { animation: monkeyStep 360ms ease-in-out both; outline: 4px solid #ff43ad; }
     @keyframes symbolDrop {
       from { opacity: 0; transform: translateY(-18px) scale(0.92); }
@@ -191,9 +191,11 @@
       55% { transform: translateX(8px) rotate(4deg) scale(1.06); }
       100% { transform: translateX(0) rotate(0) scale(1); }
     }
-    @keyframes reelPulse {
-      0% { opacity: 0.72; transform: translateY(-8px) scale(0.96); filter: saturate(1.2); }
-      100% { opacity: 1; transform: translateY(0) scale(1); filter: saturate(1); }
+    @keyframes reelSweep {
+      0% { opacity: 0.78; transform: translateY(-18px) scale(0.98); filter: blur(0) saturate(1.08); }
+      36% { opacity: 0.42; transform: translateY(22px) scale(0.94); filter: blur(8px) saturate(1.35); }
+      72% { opacity: 0.9; transform: translateY(-6px) scale(1.02); filter: blur(1px) saturate(1.08); }
+      100% { opacity: 1; transform: translateY(0) scale(1); filter: blur(0) saturate(1); }
     }
     .gum { background: linear-gradient(135deg, #ff91d4, #ff43ad); }
     .pop { background: linear-gradient(135deg, #b47bff, #661bb4); color: #fff; }
@@ -528,6 +530,7 @@
           const cell = document.createElement("div");
           cell.className = "symbol " + symbol.className + (wins.has(index) ? " is-win" : "") + (freshCells.has(index) ? " is-new" : "") + (walkingCells.has(index) ? " is-walking" : "") + (spinningCells.has(index) ? " is-spinning" : "");
           cell.setAttribute("aria-label", symbol.name);
+          if (spinningCells.has(index)) cell.style.setProperty("--spin-delay", (index % 5 * 58 + Math.floor(index / 5) * 18) + "ms");
           const image = document.createElement("img");
           image.src = symbol.image;
           image.alt = "";
@@ -643,13 +646,11 @@
         overlayTimer = window.setTimeout(() => { winOverlay.hidden = true; }, duration);
       }
 
-      async function spinReelsPreview(isFreeSpin) {
+      async function spinReelsPreview(cells, isFreeSpin) {
         const allCells = Array.from({ length: 20 }, (_, index) => index);
-        for (let tick = 0; tick < 4; tick += 1) {
-          nodes.message.textContent = isFreeSpin ? "Free spin animals charging..." : "Animals charging...";
-          render(makeGrid(), [], [], [], allCells);
-          await sleep(110 + tick * 35);
-        }
+        nodes.message.textContent = isFreeSpin ? "Free spin reels rolling..." : "Reels rolling...";
+        render(cells, [], [], [], allCells);
+        await sleep(820);
       }
 
       async function spin() {
@@ -677,7 +678,10 @@
         state.lastWin = 0;
         nodes.message.textContent = isFreeSpin ? "Free spin stampede..." : "Stampede spinning...";
         state.multiplier = 1;
-        await spinReelsPreview(isFreeSpin);
+        const previewCells = makeGrid();
+        render(previewCells);
+        await sleep(90);
+        await spinReelsPreview(previewCells, isFreeSpin);
         let cells = makeGrid();
         let spinWin = 0;
         let cascade = 0;
