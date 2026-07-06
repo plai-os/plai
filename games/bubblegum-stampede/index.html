@@ -63,9 +63,9 @@
 
     .stats {
       display: grid;
-      grid-template-columns: repeat(3, minmax(110px, 1fr));
+      grid-template-columns: repeat(4, minmax(100px, 1fr));
       gap: 10px;
-      width: min(520px, 45vw);
+      width: min(720px, 62vw);
     }
 
     .stat {
@@ -172,6 +172,11 @@
     }
 
     .symbol.is-win { outline: 4px solid var(--yellow); transform: scale(1.04); }
+    .symbol.is-new { animation: symbolDrop 220ms ease-out both; }
+    @keyframes symbolDrop {
+      from { opacity: 0; transform: translateY(-18px) scale(0.92); }
+      to { opacity: 1; transform: translateY(0) scale(1); }
+    }
     .gum { background: linear-gradient(135deg, #ff91d4, #ff43ad); }
     .pop { background: linear-gradient(135deg, #b47bff, #661bb4); color: #fff; }
     .coin { background: linear-gradient(135deg, #ffe95b, #ffb85a); }
@@ -210,13 +215,57 @@
     .spin-button { min-height: 64px; background: linear-gradient(135deg, var(--yellow), #ffb64d); color: var(--ink); font-size: 28px; text-transform: uppercase; }
     .spin-button:disabled, .round-btn:disabled { opacity: 0.62; cursor: wait; }
 
+    .utility-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .utility-button {
+      min-height: 42px;
+      border: 1px solid rgba(255,255,255,0.2);
+      border-radius: 14px;
+      background: rgba(255,255,255,0.14);
+      color: #fff;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 900;
+    }
+
     .feature-list { display: grid; gap: 10px; margin: 0; padding: 0; list-style: none; }
     .feature-list li { padding: 10px 12px; border-radius: 14px; background: var(--panel); color: rgba(255,255,255,0.86); font-size: 14px; font-weight: 750; }
+
+    .info-modal[hidden] { display: none; }
+    .info-modal {
+      position: fixed;
+      inset: 0;
+      z-index: 20;
+      display: grid;
+      place-items: center;
+      padding: 18px;
+      background: rgba(18, 5, 42, 0.72);
+    }
+    .info-dialog {
+      width: min(760px, 92vw);
+      max-height: min(760px, 86vh);
+      overflow: auto;
+      border: 1px solid rgba(255,255,255,0.22);
+      border-radius: 20px;
+      background: linear-gradient(135deg, #35116f, #7d27bd 58%, #f08bd6);
+      box-shadow: 0 28px 80px rgba(18, 5, 42, 0.55);
+    }
+    .info-head { display: flex; align-items: center; gap: 12px; padding: 16px 18px; border-bottom: 1px solid rgba(255,255,255,0.18); }
+    .info-head strong { font-size: 20px; font-weight: 950; }
+    .info-close { margin-left: auto; width: 36px; height: 36px; border: 0; border-radius: 999px; background: rgba(255,255,255,0.2); color: #fff; cursor: pointer; font-size: 24px; font-weight: 950; }
+    .info-body { display: grid; gap: 14px; padding: 18px; }
+    .info-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+    .info-card { padding: 12px; border-radius: 14px; background: rgba(255,255,255,0.14); }
+    .info-card span { display: block; color: rgba(255,255,255,0.72); font-size: 11px; font-weight: 850; text-transform: uppercase; }
+    .info-card strong { display: block; margin-top: 4px; font-size: 18px; }
+    .paytable { width: 100%; border-collapse: collapse; overflow: hidden; border-radius: 14px; background: rgba(255,255,255,0.12); }
+    .paytable th, .paytable td { padding: 9px 10px; border-bottom: 1px solid rgba(255,255,255,0.14); text-align: left; font-size: 13px; }
+    .paytable th { color: rgba(255,255,255,0.72); text-transform: uppercase; font-size: 11px; }
+    .info-copy { margin: 0; color: rgba(255,255,255,0.88); font-size: 14px; line-height: 1.45; }
 
     @media (max-width: 900px) {
       body { overflow: auto; }
       .game-shell { --symbol-size: min(calc((100vw - 64px) / 5), 128px); height: auto; min-height: 100vh; overflow: visible; }
-      .stats { width: 100%; grid-template-columns: repeat(3, 1fr); }
+      .stats { width: 100%; grid-template-columns: repeat(2, 1fr); }
       .game-board { grid-template-columns: 1fr; }
       .reel-panel { overflow: visible; }
       .reel-grid {
@@ -228,6 +277,7 @@
         align-content: start;
       }
       .control-panel { overflow: visible; }
+      .info-grid { grid-template-columns: 1fr; }
     }
   </style>
 </head>
@@ -238,6 +288,7 @@
         <div class="stat"><span>Balance</span><strong id="balanceValue">£1,000.00</strong></div>
         <div class="stat"><span>Last win</span><strong id="lastWinValue">£0.00</strong></div>
         <div class="stat"><span>Total won</span><strong id="totalWonValue">£0.00</strong></div>
+        <div class="stat"><span>Free spins</span><strong id="freeSpinValue">0</strong></div>
       </div>
     </header>
 
@@ -258,14 +309,28 @@
           <button class="round-btn" id="betUp" type="button" aria-label="Increase bet">+</button>
         </div>
         <button class="spin-button" id="spinButton" type="button">Spin</button>
+        <div class="utility-row">
+          <button class="utility-button" id="paytableButton" type="button">Paytable</button>
+          <button class="utility-button" id="aiBuildButton" type="button">AI Build</button>
+        </div>
         <ul class="feature-list">
-          <li>Three or more matching symbols pay from left to right.</li>
-          <li>Wild symbols substitute on left-to-right paylines.</li>
-          <li>Bonus stars trigger a bright free-spin tease.</li>
+          <li>Cascading wins replace paid symbols and can chain.</li>
+          <li>Wild candies substitute on left-to-right paylines.</li>
+          <li>Four Sugar Stars award 8 free spins in this demo.</li>
         </ul>
       </aside>
     </section>
   </main>
+
+  <div class="info-modal" id="infoModal" hidden>
+    <section class="info-dialog" role="dialog" aria-modal="true" aria-labelledby="infoTitle">
+      <div class="info-head">
+        <strong id="infoTitle">Paytable</strong>
+        <button class="info-close" id="infoClose" type="button" aria-label="Close panel">&times;</button>
+      </div>
+      <div class="info-body" id="infoBody"></div>
+    </section>
+  </div>
 
   <script>
     (() => {
@@ -275,15 +340,16 @@
           name: "Bubblegum Elephant",
           className: "mint",
           weight: 4,
-          pay: { 3: 4.55, 4: 18.18, 5: 81.81 },
+          pay: { 3: 3.55, 4: 14.18, 5: 63.81 },
           image: "assets/symbol-elephant.webp"
         },
         {
           id: "star",
           name: "Sugar Star",
           className: "wild",
-          weight: 6,
-          pay: { 3: 3.27, 4: 12.73, 5: 54.54 },
+          weight: 3,
+          scatter: true,
+          pay: { 3: 2.55, 4: 9.93, 5: 42.54 },
           image: "assets/symbol-star.webp"
         },
         {
@@ -291,7 +357,7 @@
           name: "Bubblegum",
           className: "gum",
           weight: 14,
-          pay: { 3: 1.09, 4: 4, 5: 16.36 },
+          pay: { 3: 0.85, 4: 3.12, 5: 12.76 },
           image: "assets/symbol-gum.webp"
         },
         {
@@ -299,7 +365,7 @@
           name: "Mint Swirl",
           className: "mint",
           weight: 22,
-          pay: { 3: 0.82, 4: 2.73, 5: 10.91 },
+          pay: { 3: 0.64, 4: 2.13, 5: 8.51 },
           image: "assets/symbol-mint.webp"
         },
         {
@@ -307,7 +373,7 @@
           name: "Candy Coin",
           className: "coin",
           weight: 22,
-          pay: { 3: 0.82, 4: 2.73, 5: 10.91 },
+          pay: { 3: 0.64, 4: 2.13, 5: 8.51 },
           image: "assets/symbol-coin.webp"
         },
         {
@@ -318,18 +384,35 @@
           wild: true,
           pay: {},
           image: "assets/symbol-wild.webp"
+        },
+        {
+          id: "bonus",
+          name: "Bonus Candy",
+          className: "pop",
+          weight: 3,
+          bonus: true,
+          pay: { 3: 3.9, 4: 19.5, 5: 97.5 },
+          image: "assets/symbol-wild.webp"
         }
       ];
       const betSteps = [1, 2, 5, 10];
-      const state = { balance: 1000, totalWon: 0, lastWin: 0, betIndex: 1, multiplier: 1, spinning: false };
+      const cascadeMultipliers = [1, 2, 3, 5];
+      const state = { balance: 1000, totalWon: 0, lastWin: 0, betIndex: 1, multiplier: 1, freeSpins: 0, spinning: false };
       const grid = document.getElementById("reelGrid");
       const spinButton = document.getElementById("spinButton");
       const betDown = document.getElementById("betDown");
       const betUp = document.getElementById("betUp");
+      const paytableButton = document.getElementById("paytableButton");
+      const aiBuildButton = document.getElementById("aiBuildButton");
+      const infoModal = document.getElementById("infoModal");
+      const infoTitle = document.getElementById("infoTitle");
+      const infoBody = document.getElementById("infoBody");
+      const infoClose = document.getElementById("infoClose");
       const nodes = {
         balance: document.getElementById("balanceValue"),
         lastWin: document.getElementById("lastWinValue"),
         totalWon: document.getElementById("totalWonValue"),
+        freeSpins: document.getElementById("freeSpinValue"),
         bet: document.getElementById("betValue"),
         message: document.getElementById("statusMessage"),
         meter: document.getElementById("cascadeMeter")
@@ -345,11 +428,12 @@
         return Array.from({ length: 20 }, () => pickSymbol());
       }
 
-      function render(cells, winning = []) {
+      function render(cells, winning = [], fresh = []) {
         const wins = new Set(winning);
+        const freshCells = new Set(fresh);
         grid.replaceChildren(...cells.map((symbol, index) => {
           const cell = document.createElement("div");
-          cell.className = "symbol " + symbol.className + (wins.has(index) ? " is-win" : "");
+          cell.className = "symbol " + symbol.className + (wins.has(index) ? " is-win" : "") + (freshCells.has(index) ? " is-new" : "");
           cell.setAttribute("aria-label", symbol.name);
           const image = document.createElement("img");
           image.src = symbol.image;
@@ -379,7 +463,7 @@
             }
           }
           if (count >= 3) {
-            const amount = (first.pay[count] || 0) * bet();
+            const amount = (first.pay[count] || 0) * bet() * state.multiplier;
             win += amount;
             winning.push(...indexes.slice(0, count));
             wins.push({ row: row + 1, count, name: first.name, amount });
@@ -392,8 +476,10 @@
         nodes.balance.textContent = money(state.balance);
         nodes.lastWin.textContent = money(state.lastWin);
         nodes.totalWon.textContent = money(state.totalWon);
+        nodes.freeSpins.textContent = format(state.freeSpins);
         nodes.bet.textContent = format(bet());
         nodes.meter.textContent = "x" + state.multiplier;
+        spinButton.textContent = state.freeSpins > 0 ? "FREE SPIN" : "SPIN";
       }
 
       function changeBet(delta) {
@@ -402,38 +488,94 @@
         updateStats();
       }
 
-      function spin() {
+      function sleep(ms) { return new Promise((resolve) => window.setTimeout(resolve, ms)); }
+
+      function replaceWinningCells(cells, winning) {
+        const next = cells.slice();
+        const fresh = [];
+        winning.forEach((index) => {
+          next[index] = pickSymbol();
+          fresh.push(index);
+        });
+        return { cells: next, fresh };
+      }
+
+      function scatterCount(cells) {
+        return cells.filter((symbol) => symbol.scatter).length;
+      }
+
+      async function spin() {
         if (state.spinning) return;
         state.spinning = true;
         spinButton.disabled = true;
         betDown.disabled = true;
         betUp.disabled = true;
-        state.balance = Math.max(0, state.balance - bet());
+        const isFreeSpin = state.freeSpins > 0;
+        if (isFreeSpin) state.freeSpins -= 1;
+        else state.balance = Math.max(0, state.balance - bet());
         state.lastWin = 0;
-        nodes.message.textContent = "Stampede spinning...";
+        nodes.message.textContent = isFreeSpin ? "Free spin stampede..." : "Stampede spinning...";
         state.multiplier = 1;
-        const cells = makeGrid();
+        let cells = makeGrid();
+        let spinWin = 0;
+        let cascade = 0;
         render(cells);
-        window.setTimeout(() => {
-          const result = evaluate(cells);
-          state.lastWin = result.win;
-          state.totalWon += result.win;
-          state.balance += result.win;
-          render(cells, result.winning);
-          if (result.win > 0) {
-            const firstWin = result.wins[0];
-            nodes.message.textContent = result.wins.length === 1
-              ? "Line " + firstWin.row + ": " + firstWin.count + "x " + firstWin.name + " from left paid " + money(firstWin.amount) + "."
-              : result.wins.length + " paylines paid " + money(result.win) + ". First: line " + firstWin.row + " with " + firstWin.count + "x " + firstWin.name + ".";
-          } else {
-            nodes.message.textContent = "No win this spin. Try again.";
-          }
+        await sleep(220);
+        while (cascade < cascadeMultipliers.length) {
+          state.multiplier = cascadeMultipliers[cascade];
           updateStats();
-          state.spinning = false;
-          spinButton.disabled = false;
-          betDown.disabled = false;
-          betUp.disabled = false;
-        }, 260);
+          const result = evaluate(cells);
+          if (result.win <= 0) break;
+          spinWin += result.win;
+          render(cells, result.winning);
+          const firstWin = result.wins[0];
+          nodes.message.textContent = "Cascade " + (cascade + 1) + ": line " + firstWin.row + " paid " + money(result.win) + " at x" + state.multiplier + ".";
+          await sleep(420);
+          const replaced = replaceWinningCells(cells, result.winning);
+          cells = replaced.cells;
+          render(cells, [], replaced.fresh);
+          await sleep(220);
+          cascade += 1;
+        }
+        const scatters = scatterCount(cells);
+        if (scatters >= 4) {
+          state.freeSpins += 8;
+          nodes.message.textContent = "4 Sugar Stars triggered 8 free spins.";
+          await sleep(360);
+        }
+        state.lastWin = spinWin;
+        state.totalWon += spinWin;
+        state.balance += spinWin;
+        if (spinWin > 0 && scatters < 3) {
+          nodes.message.textContent = cascade > 1
+            ? cascade + " cascades paid " + money(spinWin) + "."
+            : "Payline win: " + money(spinWin) + ".";
+        } else if (spinWin <= 0 && scatters < 3) {
+          nodes.message.textContent = "No win this spin. Try again.";
+        }
+        state.multiplier = 1;
+        updateStats();
+        state.spinning = false;
+        spinButton.disabled = false;
+        betDown.disabled = false;
+        betUp.disabled = false;
+      }
+
+      function openInfo(title, html) {
+        infoTitle.textContent = title;
+        infoBody.innerHTML = html;
+        infoModal.hidden = false;
+      }
+
+      function closeInfo() { infoModal.hidden = true; }
+
+      function paytableMarkup() {
+        const rows = symbols.map((symbol) => "<tr><td>" + symbol.name + "</td><td>" + (symbol.wild ? "Substitutes" : symbol.scatter ? "Scatter / pays" : symbol.bonus ? "Bonus" : "Pays") + "</td><td>" + (symbol.pay[3] || "-") + "</td><td>" + (symbol.pay[4] || "-") + "</td><td>" + (symbol.pay[5] || "-") + "</td></tr>").join("");
+        return '<p class="info-copy">Demo paytable. Wins pay left to right. Cascades replace winning symbols and increase the multiplier through x1, x2, x3 and x5. Four or more Sugar Stars award 8 free spins.</p><table class="paytable"><thead><tr><th>Symbol</th><th>Role</th><th>3x</th><th>4x</th><th>5x</th></tr></thead><tbody>' + rows + '</tbody></table><p class="info-copy">Target direction: 95% RTP, medium volatility. Current build is a stakeholder demo and not certified for real-money use.</p>';
+      }
+
+      function aiBuildMarkup() {
+        return '<div class="info-grid"><div class="info-card"><span>Phase</span><strong>AAA demo sprint</strong></div><div class="info-card"><span>Features</span><strong>Cascades + free spins</strong></div><div class="info-card"><span>Math</span><strong>Demo tuning</strong></div><div class="info-card"><span>Assets</span><strong>Impossible-style symbols</strong></div><div class="info-card"><span>RTP target</span><strong>95%</strong></div><div class="info-card"><span>Volatility</span><strong>Medium</strong></div></div><p class="info-copy">Plai AI recommendation: next optimise reel strips and feature frequency, then add walking wild choreography, big-win sequences and sound layers.</p>';
       }
 
       render(makeGrid());
@@ -441,6 +583,10 @@
       spinButton.addEventListener("click", spin);
       betDown.addEventListener("click", () => changeBet(-1));
       betUp.addEventListener("click", () => changeBet(1));
+      paytableButton.addEventListener("click", () => openInfo("Paytable", paytableMarkup()));
+      aiBuildButton.addEventListener("click", () => openInfo("Plai AI build summary", aiBuildMarkup()));
+      infoClose.addEventListener("click", closeInfo);
+      infoModal.addEventListener("click", (event) => { if (event.target === infoModal) closeInfo(); });
       window.bubblegumStampedeTestApi = { makeGrid, evaluate, spin, state };
     })();
   </script>
