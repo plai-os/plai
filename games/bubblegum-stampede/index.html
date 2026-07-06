@@ -29,8 +29,10 @@
       margin: 0;
       color: white;
       background:
-        radial-gradient(circle at 12% 12%, rgba(255, 233, 91, 0.24), transparent 18%),
-        radial-gradient(circle at 86% 18%, rgba(96, 234, 219, 0.24), transparent 20%),
+        radial-gradient(circle at 12% 12%, rgba(255, 233, 91, 0.22), transparent 18%),
+        radial-gradient(circle at 86% 18%, rgba(96, 234, 219, 0.2), transparent 20%),
+        linear-gradient(180deg, rgba(27, 5, 58, 0.5), rgba(27, 5, 58, 0.82)),
+        url("assets/jungle-stampede-bg.jpg") center / cover no-repeat,
         linear-gradient(135deg, #3d087b 0%, #8527c6 52%, #ffb4e4 100%);
       overflow: hidden;
     }
@@ -413,23 +415,77 @@
       padding: 16px;
     }
     .win-card {
-      min-width: min(440px, 78%);
-      padding: 22px 26px;
+      position: relative;
+      min-width: min(520px, 82%);
+      overflow: hidden;
+      display: grid;
+      grid-template-columns: auto minmax(0, 1fr);
+      align-items: center;
+      gap: 18px;
+      padding: 18px 24px;
       border: 2px solid rgba(255, 233, 91, 0.82);
-      border-radius: 22px;
-      background: linear-gradient(135deg, rgba(255,67,173,0.94), rgba(58,12,119,0.96));
+      border-radius: 24px;
+      background:
+        linear-gradient(135deg, rgba(18, 5, 42, 0.45), rgba(58,12,119,0.82)),
+        url("assets/jungle-stampede-bg.jpg") center / cover no-repeat,
+        linear-gradient(135deg, rgba(255,67,173,0.94), rgba(58,12,119,0.96));
       color: #fff;
-      text-align: center;
+      text-align: left;
       box-shadow: 0 30px 90px rgba(18, 5, 42, 0.62), 0 0 44px rgba(255, 233, 91, 0.3);
       animation: winPop 1500ms ease both;
     }
+    .win-card::before,
+    .win-card::after {
+      content: "";
+      position: absolute;
+      inset: -20%;
+      pointer-events: none;
+      opacity: 0;
+    }
+    .win-card::before {
+      background:
+        radial-gradient(circle at 18% 22%, rgba(255,233,91,0.42) 0 3px, transparent 4px),
+        radial-gradient(circle at 78% 28%, rgba(255,67,173,0.42) 0 3px, transparent 4px),
+        radial-gradient(circle at 62% 72%, rgba(96,234,219,0.38) 0 3px, transparent 4px),
+        radial-gradient(circle at 30% 78%, rgba(255,255,255,0.42) 0 2px, transparent 3px);
+      background-size: 92px 84px, 128px 116px, 112px 94px, 74px 68px;
+      animation: confettiRain 1700ms ease-out both;
+    }
+    .win-card::after {
+      background: conic-gradient(from 90deg, transparent, rgba(255,233,91,0.38), rgba(255,67,173,0.34), transparent 38%);
+      mix-blend-mode: screen;
+      animation: burstSpin 1600ms ease-out both;
+    }
+    .win-card.has-confetti::before,
+    .win-card.has-confetti::after { opacity: 1; }
+    .win-symbol {
+      position: relative;
+      z-index: 1;
+      width: clamp(92px, 14vw, 142px);
+      aspect-ratio: 1 / 1;
+      border-radius: 22px;
+      object-fit: cover;
+      border: 2px solid rgba(255,255,255,0.52);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.42), 0 18px 42px rgba(18,5,42,0.52), 0 0 32px rgba(255,233,91,0.26);
+    }
+    .win-copy { position: relative; z-index: 1; min-width: 0; }
     .win-card span { display: block; color: var(--yellow); font-size: 14px; font-weight: 950; text-transform: uppercase; }
     .win-card strong { display: block; margin-top: 8px; font-size: clamp(34px, 5vw, 62px); line-height: 1; }
     .win-card.is-mini { border-color: rgba(96,234,219,0.82); box-shadow: 0 24px 70px rgba(18,5,42,0.54), 0 0 34px rgba(96,234,219,0.24); }
     .win-card.is-big { border-color: rgba(255,233,91,0.9); }
     .win-card.is-mega { border-color: rgba(255,67,173,0.9); box-shadow: 0 30px 100px rgba(18,5,42,0.64), 0 0 54px rgba(255,67,173,0.38); }
-    .win-card.is-stampede { border-color: #fff; background: linear-gradient(135deg, rgba(255,233,91,0.96), rgba(255,67,173,0.96), rgba(58,12,119,0.98)); color: var(--ink); box-shadow: 0 34px 120px rgba(18,5,42,0.7), 0 0 70px rgba(255,233,91,0.42); }
-    .win-card.is-stampede span { color: var(--ink); }
+    .win-card.is-stampede { border-color: #fff; background: linear-gradient(135deg, rgba(255,233,91,0.72), rgba(255,67,173,0.74), rgba(58,12,119,0.84)), url("assets/jungle-stampede-bg.jpg") center / cover no-repeat; color: #fff; box-shadow: 0 34px 120px rgba(18,5,42,0.7), 0 0 70px rgba(255,233,91,0.42); }
+    .win-card.is-stampede span { color: #fff7a8; }
+    @keyframes confettiRain {
+      0% { opacity: 0; transform: translateY(-22px) scale(0.72) rotate(0deg); }
+      18% { opacity: 1; }
+      100% { opacity: 0; transform: translateY(70px) scale(1.08) rotate(10deg); }
+    }
+    @keyframes burstSpin {
+      0% { opacity: 0; transform: scale(0.4) rotate(0deg); }
+      28% { opacity: 0.95; }
+      100% { opacity: 0; transform: scale(1.8) rotate(90deg); }
+    }
     @keyframes winPop {
       0% { opacity: 0; transform: scale(0.74); }
       28% { opacity: 1; transform: scale(1.08); }
@@ -484,6 +540,8 @@
         align-content: start;
       }
       .control-panel { overflow: visible; }
+      .win-card { grid-template-columns: 1fr; justify-items: center; text-align: center; }
+      .win-symbol { width: 112px; }
       .info-grid { grid-template-columns: 1fr; }
     }
   </style>
@@ -514,8 +572,11 @@
         <div class="reel-grid" id="reelGrid" aria-label="Five reels with four rows"></div>
         <div class="win-overlay" id="winOverlay" hidden>
           <div class="win-card">
-            <span id="winOverlayTitle">Big win</span>
-            <strong id="winOverlayAmount">£0.00</strong>
+            <img class="win-symbol" id="winOverlaySymbol" src="assets/v2-symbols/symbol-tiger-v2.jpg" alt="" aria-hidden="true">
+            <div class="win-copy">
+              <span id="winOverlayTitle">Big win</span>
+              <strong id="winOverlayAmount">£0.00</strong>
+            </div>
           </div>
         </div>
       </section>
@@ -650,6 +711,7 @@
       const winOverlay = document.getElementById("winOverlay");
       const winOverlayTitle = document.getElementById("winOverlayTitle");
       const winOverlayAmount = document.getElementById("winOverlayAmount");
+      const winOverlaySymbol = document.getElementById("winOverlaySymbol");
       const winCard = winOverlay.querySelector(".win-card");
       const nodes = {
         balance: document.getElementById("balanceValue"),
@@ -847,7 +909,7 @@
             const amount = (first.pay[count] || 0) * bet() * state.multiplier;
             win += amount;
             winning.push(...indexes.slice(0, count));
-            wins.push({ row: row + 1, count, name: first.name, amount, indexes: indexes.slice(0, count) });
+            wins.push({ row: row + 1, count, name: first.name, symbol: first, amount, indexes: indexes.slice(0, count) });
           }
         });
         return { win, winning, wins };
@@ -937,9 +999,13 @@
         return { cells: next, from: wildIndex, to: target };
       }
 
-      function showWinOverlay(title, amount, duration = 2200, tier = "") {
+      function showWinOverlay(title, amount, duration = 2200, tier = "", symbol = null) {
         window.clearTimeout(overlayTimer);
-        winCard.className = "win-card" + (tier ? " is-" + tier : "");
+        const confetti = tier === "big" || tier === "mega" || tier === "stampede";
+        winCard.className = "win-card" + (tier ? " is-" + tier : "") + (confetti ? " has-confetti" : "");
+        const art = symbol && symbol.image ? symbol : symbols.find((item) => item.id === "wild");
+        winOverlaySymbol.src = art.image;
+        winOverlaySymbol.alt = art.name;
         winOverlayTitle.textContent = title;
         winOverlayAmount.textContent = amount;
         winOverlay.hidden = false;
@@ -982,7 +1048,7 @@
         nodes.applyRecommendation.textContent = "Applied";
         nodes.applyRecommendation.disabled = true;
         sound("big");
-        showWinOverlay("Optimisation applied", "Win pacing upgraded", 1900, "big");
+        showWinOverlay("Optimisation applied", "Win pacing upgraded", 1900, "big", symbols.find((item) => item.id === "wild"));
         updateInsights();
       }
 
@@ -1027,7 +1093,7 @@
           } else if (lockedScatters === 3 && col < 4) {
             nodes.message.textContent = "3 Ostrich Scatters. One more starts free spins.";
             sound("scatter");
-            showWinOverlay("Scatter chance", "One more...", 1300, "mini");
+            showWinOverlay("Scatter chance", "One more...", 1300, "mini", symbols.find((item) => item.scatter));
             await sleep(520);
           }
         }
@@ -1063,7 +1129,7 @@
           }
           if (state.featureIntroPending) {
             sound("free");
-            showWinOverlay("Animal Stampede Free Spins", freeSpinsBefore + " spins", 2800, "stampede");
+            showWinOverlay("Animal Stampede Free Spins", freeSpinsBefore + " spins", 2800, "stampede", symbols.find((item) => item.scatter));
             nodes.message.textContent = "Free spins feature started.";
             state.featureIntroPending = false;
             await sleep(1700);
@@ -1081,6 +1147,8 @@
         let cells = makeGrid();
         await spinReelsToResult(startCells, cells, isFreeSpin);
         let spinWin = 0;
+        let celebrationSymbol = null;
+        let bestLineWin = 0;
         let cascade = 0;
         render(cells);
         const openingScatters = scatterCount(cells);
@@ -1095,6 +1163,12 @@
           const result = evaluate(cells);
           if (result.win <= 0) break;
           spinWin += result.win;
+          for (const candidate of result.wins) {
+            if (candidate.amount > bestLineWin) {
+              bestLineWin = candidate.amount;
+              celebrationSymbol = candidate.symbol;
+            }
+          }
           for (const lineWin of result.wins) {
             render(cells, lineWin.indexes);
             nodes.message.textContent = "Cascade " + (cascade + 1) + ": line " + lineWin.row + " - " + lineWin.count + "x " + lineWin.name + " paid " + money(lineWin.amount) + ".";
@@ -1115,7 +1189,7 @@
             nodes.message.textContent = "Cheeky Monkey Wild stepped one reel right.";
             sound("monkey");
             render(cells, [], [monkeyStep.from], [monkeyStep.to], [], [], [monkeyStep.from]);
-            showWinOverlay("Cheeky Monkey Wild", "Stepped right", 1200, "mini");
+            showWinOverlay("Cheeky Monkey Wild", "Stepped right", 1200, "mini", cells[monkeyStep.to]);
             await sleep(620);
           }
           cascade += 1;
@@ -1130,7 +1204,7 @@
           state.featureIntroPending = true;
           nodes.message.textContent = "4 Ostrich Scatters triggered Animal Stampede Free Spins.";
           sound("free");
-          showWinOverlay("Feature unlocked", "8 free spins", 3200, "stampede");
+          showWinOverlay("Feature unlocked", "8 free spins", 3200, "stampede", symbols.find((item) => item.scatter));
           await sleep(2200);
         }
         const totalBeforeWin = state.totalWon;
@@ -1145,7 +1219,7 @@
         if (isFreeSpin && state.featureActive && state.freeSpins === 0) {
           nodes.message.textContent = "Animal Stampede Free Spins complete: " + money(state.featureWin) + " total feature win.";
           sound("stampede");
-          showWinOverlay("Feature complete", money(state.featureWin), 3200, "stampede");
+          showWinOverlay("Feature complete", money(state.featureWin), 3200, "stampede", symbols.find((item) => item.id === "bonus"));
           state.featureActive = false;
           state.featureIntroPending = false;
           await sleep(1500);
@@ -1156,7 +1230,7 @@
           const tier = winTier(spinWin);
           if (tier) {
             sound(tier.sound);
-            showWinOverlay(tier.title, money(spinWin), tier.duration, tier.tier);
+            showWinOverlay(tier.title, money(spinWin), tier.duration, tier.tier, celebrationSymbol);
           }
         } else if (spinWin <= 0 && scatters < 4) {
           nodes.message.textContent = "No win this spin. Try again.";
