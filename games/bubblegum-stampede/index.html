@@ -763,8 +763,8 @@
           strip.style.transform = "translateY(-" + Number(strip.dataset.rollSteps) * stepDistance + "px)";
         });
         await sleep(2320);
-        render(finalCells, [], Array.from({ length: 20 }, (_, index) => index));
-        await sleep(180);
+        render(finalCells);
+        await sleep(80);
       }
 
       async function spin() {
