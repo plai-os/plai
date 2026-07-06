@@ -3794,16 +3794,16 @@ function openBubblegumStampedeModal() {
     modal.className = "plai-bubblegum-game-modal";
     modal.setAttribute("role", "dialog");
     modal.setAttribute("aria-modal", "true");
-    modal.setAttribute("aria-label", "Bubblegum Stampede");
-    const gameUrl = new URL("games/bubblegum-stampede/index.html?v=20260706-monkey-wild", window.location.href).toString();
+    modal.setAttribute("aria-label", "Animal Stampede");
+    const gameUrl = new URL("games/bubblegum-stampede/index.html?v=20260706-animal-stampede", window.location.href).toString();
     modal.innerHTML = [
       '<div class="plai-bubblegum-game-shell" role="document">',
       '<div class="plai-bubblegum-game-bar">',
       '<span class="plai-bubblegum-game-pill">Exclusive</span>',
-      '<strong class="plai-bubblegum-game-title">Bubblegum Stampede</strong>',
-      '<button class="plai-bubblegum-game-close" type="button" aria-label="Close Bubblegum Stampede">&times;</button>',
+      '<strong class="plai-bubblegum-game-title">Animal Stampede</strong>',
+      '<button class="plai-bubblegum-game-close" type="button" aria-label="Close Animal Stampede">&times;</button>',
       '</div>',
-      '<iframe class="plai-bubblegum-game-frame" title="Bubblegum Stampede" src="' + gameUrl + '" loading="eager" allow="autoplay; fullscreen"></iframe>',
+      '<iframe class="plai-bubblegum-game-frame" title="Animal Stampede" src="' + gameUrl + '" loading="eager" allow="autoplay; fullscreen"></iframe>',
       '</div>'
     ].join("");
     document.body.appendChild(modal);

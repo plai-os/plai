@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Bubblegum Stampede</title>
+  <title>Animal Stampede</title>
   <style>
     :root {
       --ink: #211247;
@@ -70,9 +70,9 @@
 
     .stats {
       display: grid;
-      grid-template-columns: repeat(4, minmax(100px, 1fr));
+      grid-template-columns: repeat(5, minmax(100px, 1fr));
       gap: 10px;
-      width: min(720px, 62vw);
+      width: min(900px, 76vw);
     }
 
     .stat {
@@ -261,14 +261,15 @@
       color: #fff;
       text-align: center;
       box-shadow: 0 30px 90px rgba(18, 5, 42, 0.62), 0 0 44px rgba(255, 233, 91, 0.3);
-      animation: winPop 760ms ease both;
+      animation: winPop 1500ms ease both;
     }
     .win-card span { display: block; color: var(--yellow); font-size: 14px; font-weight: 950; text-transform: uppercase; }
     .win-card strong { display: block; margin-top: 8px; font-size: clamp(34px, 5vw, 62px); line-height: 1; }
     @keyframes winPop {
       0% { opacity: 0; transform: scale(0.74); }
-      35% { opacity: 1; transform: scale(1.08); }
-      100% { opacity: 0; transform: scale(1); }
+      28% { opacity: 1; transform: scale(1.08); }
+      78% { opacity: 1; transform: scale(1); }
+      100% { opacity: 0; transform: scale(0.98); }
     }
 
     .info-modal[hidden] { display: none; }
@@ -323,18 +324,19 @@
   </style>
 </head>
 <body>
-  <main class="game-shell" data-game="bubblegum-stampede">
+  <main class="game-shell" data-game="animal-stampede">
     <header class="meter-header">
       <div class="stats" aria-label="Game meters">
         <div class="stat"><span>Balance</span><strong id="balanceValue">£1,000.00</strong></div>
         <div class="stat"><span>Last win</span><strong id="lastWinValue">£0.00</strong></div>
         <div class="stat"><span>Total won</span><strong id="totalWonValue">£0.00</strong></div>
         <div class="stat"><span>Free spins</span><strong id="freeSpinValue">0</strong></div>
+        <div class="stat"><span>RTP</span><strong id="rtpValue">0.00%</strong></div>
       </div>
     </header>
 
     <section class="game-board">
-      <section class="reel-panel" aria-label="Bubblegum Stampede reels">
+      <section class="reel-panel" aria-label="Animal Stampede reels">
         <div class="message-strip">
           <span id="statusMessage">Press Spin to start the stampede.</span>
           <span class="multiplier" id="cascadeMeter">x1</span>
@@ -357,7 +359,7 @@
         <ul class="feature-list">
           <li>Cascading wins replace paid symbols and can chain.</li>
           <li>Cheeky Monkey Wild substitutes on left-to-right paylines.</li>
-          <li>Four Sugar Stars award 8 free spins in this demo.</li>
+          <li>Four Ostrich Scatters award 8 free spins in this demo.</li>
         </ul>
       </aside>
     </section>
@@ -385,7 +387,7 @@
       const symbols = [
         {
           id: "ele",
-          name: "Bubblegum Elephant",
+          name: "Impossible Elephant",
           className: "mint",
           weight: 4,
           pay: { 3: 3.55, 4: 14.18, 5: 63.81 },
@@ -393,7 +395,7 @@
         },
         {
           id: "star",
-          name: "Sugar Star",
+          name: "Ostrich Scatter",
           className: "wild",
           weight: 3,
           scatter: true,
@@ -402,7 +404,7 @@
         },
         {
           id: "gum",
-          name: "Bubblegum",
+          name: "Tiger",
           className: "gum",
           weight: 14,
           pay: { 3: 0.85, 4: 3.12, 5: 12.76 },
@@ -410,7 +412,7 @@
         },
         {
           id: "mint",
-          name: "Mint Swirl",
+          name: "Zebra",
           className: "mint",
           weight: 22,
           pay: { 3: 0.64, 4: 2.13, 5: 8.51 },
@@ -418,7 +420,7 @@
         },
         {
           id: "coin",
-          name: "Candy Coin",
+          name: "Rhino",
           className: "coin",
           weight: 22,
           pay: { 3: 0.64, 4: 2.13, 5: 8.51 },
@@ -435,17 +437,17 @@
         },
         {
           id: "bonus",
-          name: "Bonus Candy",
+          name: "Giraffe Bonus",
           className: "pop",
           weight: 3,
           bonus: true,
           pay: { 3: 3.9, 4: 19.5, 5: 97.5 },
-          image: "assets/symbol-gum.webp"
+          image: "assets/symbol-bonus.webp"
         }
       ];
       const betSteps = [1, 2, 5, 10];
       const cascadeMultipliers = [1, 2, 3, 5];
-      const state = { balance: 1000, totalWon: 0, lastWin: 0, betIndex: 1, multiplier: 1, freeSpins: 0, spinning: false };
+      const state = { balance: 1000, totalWon: 0, totalStaked: 0, lastWin: 0, betIndex: 1, multiplier: 1, freeSpins: 0, spinning: false };
       const shell = document.querySelector(".game-shell");
       const grid = document.getElementById("reelGrid");
       const spinButton = document.getElementById("spinButton");
@@ -465,6 +467,7 @@
         lastWin: document.getElementById("lastWinValue"),
         totalWon: document.getElementById("totalWonValue"),
         freeSpins: document.getElementById("freeSpinValue"),
+        rtp: document.getElementById("rtpValue"),
         bet: document.getElementById("betValue"),
         message: document.getElementById("statusMessage"),
         meter: document.getElementById("cascadeMeter")
@@ -530,6 +533,7 @@
         nodes.lastWin.textContent = money(state.lastWin);
         nodes.totalWon.textContent = money(state.totalWon);
         nodes.freeSpins.textContent = format(state.freeSpins);
+        nodes.rtp.textContent = state.totalStaked > 0 ? (state.totalWon / state.totalStaked * 100).toFixed(2) + "%" : "0.00%";
         nodes.bet.textContent = format(bet());
         nodes.meter.textContent = "x" + state.multiplier;
         spinButton.textContent = state.freeSpins > 0 ? "FREE SPIN" : "SPIN";
@@ -572,7 +576,7 @@
         winOverlayTitle.textContent = title;
         winOverlayAmount.textContent = amount;
         winOverlay.hidden = false;
-        window.setTimeout(() => { winOverlay.hidden = true; }, 900);
+        window.setTimeout(() => { winOverlay.hidden = true; }, 1800);
       }
 
       async function spin() {
@@ -583,7 +587,10 @@
         betUp.disabled = true;
         const isFreeSpin = state.freeSpins > 0;
         if (isFreeSpin) state.freeSpins -= 1;
-        else state.balance = Math.max(0, state.balance - bet());
+        else {
+          state.balance = Math.max(0, state.balance - bet());
+          state.totalStaked += bet();
+        }
         state.lastWin = 0;
         nodes.message.textContent = isFreeSpin ? "Free spin stampede..." : "Stampede spinning...";
         state.multiplier = 1;
@@ -618,9 +625,9 @@
         const scatters = scatterCount(cells);
         if (scatters >= 4) {
           state.freeSpins += 8;
-          nodes.message.textContent = "4 Sugar Stars triggered 8 free spins.";
+          nodes.message.textContent = "4 Ostrich Scatters triggered 8 free spins.";
           showWinOverlay("Free spins", "8 awarded");
-          await sleep(760);
+          await sleep(1400);
         }
         state.lastWin = spinWin;
         state.totalWon += spinWin;
@@ -652,11 +659,11 @@
 
       function paytableMarkup() {
         const rows = symbols.map((symbol) => "<tr><td>" + symbol.name + "</td><td>" + (symbol.wild ? "Substitutes" : symbol.scatter ? "Scatter / pays" : symbol.bonus ? "Bonus" : "Pays") + "</td><td>" + (symbol.pay[3] || "-") + "</td><td>" + (symbol.pay[4] || "-") + "</td><td>" + (symbol.pay[5] || "-") + "</td></tr>").join("");
-        return '<p class="info-copy">Demo paytable. Wins pay left to right. Cascades replace winning symbols and increase the multiplier through x1, x2, x3 and x5. Four or more Sugar Stars award 8 free spins.</p><table class="paytable"><thead><tr><th>Symbol</th><th>Role</th><th>3x</th><th>4x</th><th>5x</th></tr></thead><tbody>' + rows + '</tbody></table><p class="info-copy">Target direction: 95% RTP, medium volatility. Current build is a stakeholder demo and not certified for real-money use.</p>';
+        return '<p class="info-copy">Demo paytable. Wins pay left to right. Cascades replace winning symbols and increase the multiplier through x1, x2, x3 and x5. Four or more Ostrich Scatters award 8 free spins.</p><table class="paytable"><thead><tr><th>Symbol</th><th>Role</th><th>3x</th><th>4x</th><th>5x</th></tr></thead><tbody>' + rows + '</tbody></table><p class="info-copy">Target direction: 94% RTP, medium volatility. Current build is a stakeholder demo and not certified for real-money use.</p>';
       }
 
       function aiBuildMarkup() {
-        return '<div class="info-grid"><div class="info-card"><span>Phase</span><strong>AAA demo sprint</strong></div><div class="info-card"><span>Features</span><strong>Cascades + free spins</strong></div><div class="info-card"><span>Wild feature</span><strong>Cheeky monkey step</strong></div><div class="info-card"><span>Assets</span><strong>Cleaner symbol set</strong></div><div class="info-card"><span>RTP target</span><strong>95%</strong></div><div class="info-card"><span>Volatility</span><strong>Medium</strong></div></div><p class="info-copy">Plai AI recommendation: next optimise reel strips and feature frequency, then add stronger free-spin choreography, big-win count-up timing and a lightweight sound layer.</p>';
+        return '<div class="info-grid"><div class="info-card"><span>Phase</span><strong>AAA demo sprint</strong></div><div class="info-card"><span>Features</span><strong>Cascades + free spins</strong></div><div class="info-card"><span>Wild feature</span><strong>Cheeky monkey step</strong></div><div class="info-card"><span>Assets</span><strong>Animal symbol set</strong></div><div class="info-card"><span>RTP target</span><strong>94%</strong></div><div class="info-card"><span>Volatility</span><strong>Medium</strong></div></div><p class="info-copy">Plai AI recommendation: next tune animal reel strips and feature frequency, then add stronger free-spin choreography, big-win count-up timing and a lightweight sound layer.</p>';
       }
 
       render(makeGrid());
