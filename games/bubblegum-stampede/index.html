@@ -41,6 +41,7 @@
 
     .game-shell {
       --symbol-size: clamp(76px, min(calc((100vw - 476px) / 5), calc((100vh - 344px) / 4)), 176px);
+      position: relative;
       height: 100vh;
       min-height: 0;
       padding: clamp(10px, 1.8vw, 22px);
@@ -431,6 +432,53 @@
     .ai-apply { min-height: 38px; border: 0; border-radius: 12px; background: linear-gradient(135deg, var(--yellow), #ffb64d); color: var(--ink); cursor: pointer; font-size: 13px; font-weight: 950; }
     .ai-apply:disabled { cursor: default; opacity: 0.78; background: rgba(255,255,255,0.18); color: #fff; }
 
+    .screen-confetti[hidden] { display: none; }
+    .screen-confetti {
+      position: absolute;
+      inset: 0;
+      z-index: 17;
+      pointer-events: none;
+      overflow: hidden;
+    }
+    .screen-confetti::before,
+    .screen-confetti::after {
+      content: "";
+      position: absolute;
+      inset: -18% -8% auto -8%;
+      height: 120%;
+      opacity: 0;
+      background:
+        radial-gradient(circle at 8% 8%, #ffe95b 0 4px, transparent 5px),
+        radial-gradient(circle at 20% 18%, #ff43ad 0 5px, transparent 6px),
+        radial-gradient(circle at 34% 10%, #60eadb 0 4px, transparent 5px),
+        radial-gradient(circle at 48% 20%, #fff 0 3px, transparent 4px),
+        radial-gradient(circle at 62% 8%, #ffb64d 0 5px, transparent 6px),
+        radial-gradient(circle at 78% 18%, #ffe95b 0 4px, transparent 5px),
+        radial-gradient(circle at 92% 10%, #ff43ad 0 5px, transparent 6px);
+      background-size: 170px 150px, 210px 180px, 190px 160px, 150px 130px, 220px 190px, 180px 160px, 200px 170px;
+      animation: screenConfettiFall 3200ms ease-out both;
+    }
+    .screen-confetti::after {
+      inset: auto -12% -16% -12%;
+      height: 82%;
+      background:
+        conic-gradient(from 90deg at 50% 50%, transparent, rgba(255,233,91,0.72), rgba(255,67,173,0.62), rgba(96,234,219,0.58), transparent 42%);
+      mix-blend-mode: screen;
+      animation: screenConfettiBurst 2600ms ease-out both;
+    }
+    .screen-confetti.is-active::before,
+    .screen-confetti.is-active::after { opacity: 1; }
+    @keyframes screenConfettiFall {
+      0% { opacity: 0; transform: translateY(-12%) scale(0.82) rotate(0deg); }
+      14% { opacity: 1; }
+      100% { opacity: 0; transform: translateY(62%) scale(1.08) rotate(16deg); }
+    }
+    @keyframes screenConfettiBurst {
+      0% { opacity: 0; transform: scale(0.35) rotate(0deg); }
+      18% { opacity: 0.9; }
+      100% { opacity: 0; transform: scale(1.7) rotate(120deg); }
+    }
+
     .win-overlay[hidden] { display: none; }
     .win-overlay {
       position: absolute;
@@ -575,6 +623,7 @@
 </head>
 <body>
   <main class="game-shell" data-game="animal-stampede">
+    <div class="screen-confetti" id="screenConfetti" hidden></div>
     <header class="meter-header">
       <div class="stats" aria-label="Game meters">
         <div class="stat"><span>Balance</span><strong id="balanceValue">£1,000.00</strong></div>
@@ -721,6 +770,9 @@
       const soundPref = (() => { try { return localStorage.getItem("animalStampedeSound"); } catch (error) { return null; } })();
       const state = { balance: 1000, totalWon: 0, totalStaked: 0, lastWin: 0, betIndex: 1, multiplier: 1, freeSpins: 0, spinning: false, spins: 0, hitSpins: 0, lastCascadeCount: 0, featureActive: false, featureStartSpins: 0, featureWin: 0, biggestWin: 0, optimisationApplied: false, featureIntroPending: false, soundOn: soundPref !== "off" };
       let overlayTimer = 0;
+      let confettiTimer = 0;
+      let overlayShowing = false;
+      const overlayQueue = [];
       let currentCells = [];
       let audioContext = null;
       let audioMaster = null;
@@ -738,6 +790,7 @@
       const infoTitle = document.getElementById("infoTitle");
       const infoBody = document.getElementById("infoBody");
       const infoClose = document.getElementById("infoClose");
+      const screenConfetti = document.getElementById("screenConfetti");
       const winOverlay = document.getElementById("winOverlay");
       const winOverlayTitle = document.getElementById("winOverlayTitle");
       const winOverlayAmount = document.getElementById("winOverlayAmount");
@@ -1033,17 +1086,42 @@
         return { cells: next, from: wildIndex, to: target };
       }
 
-      function showWinOverlay(title, amount, duration = 2200, tier = "", symbol = null) {
-        window.clearTimeout(overlayTimer);
-        const confetti = tier === "big" || tier === "mega" || tier === "stampede";
-        winCard.className = "win-card" + (tier ? " is-" + tier : "") + (confetti ? " has-confetti" : "");
-        const art = symbol && symbol.image ? symbol : symbols.find((item) => item.id === "wild");
+      function triggerScreenConfetti(duration = 3200) {
+        window.clearTimeout(confettiTimer);
+        screenConfetti.hidden = false;
+        screenConfetti.classList.remove("is-active");
+        void screenConfetti.offsetWidth;
+        screenConfetti.classList.add("is-active");
+        confettiTimer = window.setTimeout(() => {
+          screenConfetti.classList.remove("is-active");
+          screenConfetti.hidden = true;
+        }, duration);
+      }
+
+      function runNextOverlay() {
+        if (overlayShowing || overlayQueue.length <= 0) return;
+        overlayShowing = true;
+        const next = overlayQueue.shift();
+        const confetti = next.tier === "big" || next.tier === "mega" || next.tier === "stampede";
+        winCard.className = "win-card" + (next.tier ? " is-" + next.tier : "") + (confetti ? " has-confetti" : "");
+        const art = next.symbol && next.symbol.image ? next.symbol : symbols.find((item) => item.id === "wild");
         winOverlaySymbol.src = art.image;
         winOverlaySymbol.alt = art.name;
-        winOverlayTitle.textContent = title;
-        winOverlayAmount.textContent = amount;
+        winOverlayTitle.textContent = next.title;
+        winOverlayAmount.textContent = next.amount;
         winOverlay.hidden = false;
-        overlayTimer = window.setTimeout(() => { winOverlay.hidden = true; }, duration * 2);
+        if (confetti) triggerScreenConfetti(Math.max(3200, next.duration));
+        overlayTimer = window.setTimeout(() => {
+          winOverlay.hidden = true;
+          overlayShowing = false;
+          runNextOverlay();
+        }, next.duration);
+      }
+
+      function showWinOverlay(title, amount, duration = 2200, tier = "", symbol = null) {
+        const displayDuration = Math.max(4200, duration * 2.6);
+        overlayQueue.push({ title, amount, duration: displayDuration, tier, symbol });
+        runNextOverlay();
       }
 
       function animateMoney(node, from, to, duration = 760) {
