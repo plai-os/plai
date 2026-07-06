@@ -70,9 +70,9 @@
 
     .stats {
       display: grid;
-      grid-template-columns: repeat(5, minmax(100px, 1fr));
+      grid-template-columns: repeat(6, minmax(94px, 1fr));
       gap: 10px;
-      width: min(900px, 76vw);
+      width: min(1080px, 84vw);
     }
 
     .stat {
@@ -180,6 +180,7 @@
 
     .symbol.is-win { outline: 4px solid var(--yellow); transform: scale(1.04); }
     .symbol.is-new { animation: symbolDrop 220ms ease-out both; }
+    .symbol.is-spinning { animation: reelPulse 180ms ease-in-out both; }
     .symbol.is-walking { animation: monkeyStep 360ms ease-in-out both; outline: 4px solid #ff43ad; }
     @keyframes symbolDrop {
       from { opacity: 0; transform: translateY(-18px) scale(0.92); }
@@ -189,6 +190,10 @@
       0% { transform: translateX(-22px) rotate(-4deg) scale(0.96); }
       55% { transform: translateX(8px) rotate(4deg) scale(1.06); }
       100% { transform: translateX(0) rotate(0) scale(1); }
+    }
+    @keyframes reelPulse {
+      0% { opacity: 0.72; transform: translateY(-8px) scale(0.96); filter: saturate(1.2); }
+      100% { opacity: 1; transform: translateY(0) scale(1); filter: saturate(1); }
     }
     .gum { background: linear-gradient(135deg, #ff91d4, #ff43ad); }
     .pop { background: linear-gradient(135deg, #b47bff, #661bb4); color: #fff; }
@@ -242,6 +247,22 @@
 
     .feature-list { display: grid; gap: 10px; margin: 0; padding: 0; list-style: none; }
     .feature-list li { padding: 10px 12px; border-radius: 14px; background: var(--panel); color: rgba(255,255,255,0.86); font-size: 14px; font-weight: 750; }
+
+    .ai-panel {
+      display: grid;
+      gap: 10px;
+      margin-top: 2px;
+      padding: 12px;
+      border: 1px solid rgba(255,255,255,0.2);
+      border-radius: 16px;
+      background: rgba(18, 5, 42, 0.28);
+    }
+    .ai-panel h3 { margin: 0; font-size: 15px; font-weight: 950; }
+    .ai-panel p { margin: 0; color: rgba(255,255,255,0.84); font-size: 13px; line-height: 1.35; font-weight: 720; }
+    .ai-metrics { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .ai-metric { padding: 8px; border-radius: 12px; background: rgba(255,255,255,0.12); }
+    .ai-metric span { display: block; color: rgba(255,255,255,0.62); font-size: 10px; font-weight: 850; text-transform: uppercase; }
+    .ai-metric strong { display: block; margin-top: 3px; font-size: 16px; }
 
     .win-overlay[hidden] { display: none; }
     .win-overlay {
@@ -332,6 +353,7 @@
         <div class="stat"><span>Total won</span><strong id="totalWonValue">£0.00</strong></div>
         <div class="stat"><span>Free spins</span><strong id="freeSpinValue">0</strong></div>
         <div class="stat"><span>RTP</span><strong id="rtpValue">0.00%</strong></div>
+        <div class="stat"><span>Average RTP</span><strong id="avgRtpValue">94.00%</strong></div>
       </div>
     </header>
 
@@ -361,6 +383,14 @@
           <li>Cheeky Monkey Wild substitutes on left-to-right paylines.</li>
           <li>Four Ostrich Scatters award 8 free spins in this demo.</li>
         </ul>
+        <section class="ai-panel" aria-label="PlayAI optimisation recommendations">
+          <h3>PlayAI optimisation</h3>
+          <div class="ai-metrics">
+            <div class="ai-metric"><span>Target gap</span><strong id="rtpGapValue">0.00%</strong></div>
+            <div class="ai-metric"><span>Hit rate</span><strong id="hitRateValue">0%</strong></div>
+          </div>
+          <p id="aiInsightValue">Spin data will tune recommendations live.</p>
+        </section>
       </aside>
     </section>
   </main>
@@ -447,7 +477,9 @@
       ];
       const betSteps = [1, 2, 5, 10];
       const cascadeMultipliers = [1, 2, 3, 5];
-      const state = { balance: 1000, totalWon: 0, totalStaked: 0, lastWin: 0, betIndex: 1, multiplier: 1, freeSpins: 0, spinning: false };
+      const targetRtp = 94;
+      const state = { balance: 1000, totalWon: 0, totalStaked: 0, lastWin: 0, betIndex: 1, multiplier: 1, freeSpins: 0, spinning: false, spins: 0, hitSpins: 0, lastCascadeCount: 0, featureActive: false, featureStartSpins: 0, featureWin: 0, biggestWin: 0 };
+      let overlayTimer = 0;
       const shell = document.querySelector(".game-shell");
       const grid = document.getElementById("reelGrid");
       const spinButton = document.getElementById("spinButton");
@@ -468,9 +500,13 @@
         totalWon: document.getElementById("totalWonValue"),
         freeSpins: document.getElementById("freeSpinValue"),
         rtp: document.getElementById("rtpValue"),
+        avgRtp: document.getElementById("avgRtpValue"),
         bet: document.getElementById("betValue"),
         message: document.getElementById("statusMessage"),
-        meter: document.getElementById("cascadeMeter")
+        meter: document.getElementById("cascadeMeter"),
+        rtpGap: document.getElementById("rtpGapValue"),
+        hitRate: document.getElementById("hitRateValue"),
+        aiInsight: document.getElementById("aiInsightValue")
       };
 
       function bet() { return betSteps[state.betIndex]; }
@@ -483,13 +519,14 @@
         return Array.from({ length: 20 }, () => pickSymbol());
       }
 
-      function render(cells, winning = [], fresh = [], walking = []) {
+      function render(cells, winning = [], fresh = [], walking = [], spinning = []) {
         const wins = new Set(winning);
         const freshCells = new Set(fresh);
         const walkingCells = new Set(walking);
+        const spinningCells = new Set(spinning);
         grid.replaceChildren(...cells.map((symbol, index) => {
           const cell = document.createElement("div");
-          cell.className = "symbol " + symbol.className + (wins.has(index) ? " is-win" : "") + (freshCells.has(index) ? " is-new" : "") + (walkingCells.has(index) ? " is-walking" : "");
+          cell.className = "symbol " + symbol.className + (wins.has(index) ? " is-win" : "") + (freshCells.has(index) ? " is-new" : "") + (walkingCells.has(index) ? " is-walking" : "") + (spinningCells.has(index) ? " is-spinning" : "");
           cell.setAttribute("aria-label", symbol.name);
           const image = document.createElement("img");
           image.src = symbol.image;
@@ -534,10 +571,36 @@
         nodes.totalWon.textContent = money(state.totalWon);
         nodes.freeSpins.textContent = format(state.freeSpins);
         nodes.rtp.textContent = state.totalStaked > 0 ? (state.totalWon / state.totalStaked * 100).toFixed(2) + "%" : "0.00%";
+        nodes.avgRtp.textContent = targetRtp.toFixed(2) + "%";
         nodes.bet.textContent = format(bet());
         nodes.meter.textContent = "x" + state.multiplier;
         spinButton.textContent = state.freeSpins > 0 ? "FREE SPIN" : "SPIN";
-        shell.classList.toggle("is-free-mode", state.freeSpins > 0 || state.spinning && spinButton.textContent === "FREE SPIN");
+        shell.classList.toggle("is-free-mode", state.freeSpins > 0 || state.featureActive || state.spinning && spinButton.textContent === "FREE SPIN");
+        updateInsights();
+      }
+
+      function sessionRtp() {
+        return state.totalStaked > 0 ? state.totalWon / state.totalStaked * 100 : 0;
+      }
+
+      function updateInsights() {
+        const rtp = sessionRtp();
+        const gap = state.totalStaked > 0 ? rtp - targetRtp : 0;
+        nodes.rtpGap.textContent = (gap >= 0 ? "+" : "") + gap.toFixed(2) + "%";
+        nodes.hitRate.textContent = state.spins > 0 ? Math.round(state.hitSpins / state.spins * 100) + "%" : "0%";
+        if (state.spins < 3) {
+          nodes.aiInsight.textContent = "Collecting early spin data before recommending changes.";
+        } else if (rtp > targetRtp + 12) {
+          nodes.aiInsight.textContent = "RTP is running hot. Recommendation: reduce cascade frequency or monkey movement frequency.";
+        } else if (rtp < targetRtp - 12) {
+          nodes.aiInsight.textContent = "RTP is running cold. Recommendation: lift low-tier animal pays or add more monkey anticipation.";
+        } else if (state.lastCascadeCount >= 2) {
+          nodes.aiInsight.textContent = "Cascade engagement is strong. Recommendation: add count-up timing and line-by-line celebration.";
+        } else if (state.featureActive) {
+          nodes.aiInsight.textContent = "Free-spin mode is active. Recommendation: emphasize remaining spins and retrigger tension.";
+        } else {
+          nodes.aiInsight.textContent = "Model is tracking close to target. Recommendation: polish reel choreography next.";
+        }
       }
 
       function changeBet(delta) {
@@ -572,11 +635,21 @@
         return { cells: next, from: wildIndex, to: target };
       }
 
-      function showWinOverlay(title, amount) {
+      function showWinOverlay(title, amount, duration = 2200) {
+        window.clearTimeout(overlayTimer);
         winOverlayTitle.textContent = title;
         winOverlayAmount.textContent = amount;
         winOverlay.hidden = false;
-        window.setTimeout(() => { winOverlay.hidden = true; }, 1800);
+        overlayTimer = window.setTimeout(() => { winOverlay.hidden = true; }, duration);
+      }
+
+      async function spinReelsPreview(isFreeSpin) {
+        const allCells = Array.from({ length: 20 }, (_, index) => index);
+        for (let tick = 0; tick < 4; tick += 1) {
+          nodes.message.textContent = isFreeSpin ? "Free spin animals charging..." : "Animals charging...";
+          render(makeGrid(), [], [], [], allCells);
+          await sleep(110 + tick * 35);
+        }
       }
 
       async function spin() {
@@ -586,7 +659,17 @@
         betDown.disabled = true;
         betUp.disabled = true;
         const isFreeSpin = state.freeSpins > 0;
-        if (isFreeSpin) state.freeSpins -= 1;
+        const freeSpinsBefore = state.freeSpins;
+        if (isFreeSpin) {
+          if (!state.featureActive) {
+            state.featureActive = true;
+            state.featureStartSpins = freeSpinsBefore;
+            state.featureWin = 0;
+            showWinOverlay("Free spins", freeSpinsBefore + " remaining", 1800);
+            await sleep(650);
+          }
+          state.freeSpins -= 1;
+        }
         else {
           state.balance = Math.max(0, state.balance - bet());
           state.totalStaked += bet();
@@ -594,11 +677,17 @@
         state.lastWin = 0;
         nodes.message.textContent = isFreeSpin ? "Free spin stampede..." : "Stampede spinning...";
         state.multiplier = 1;
+        await spinReelsPreview(isFreeSpin);
         let cells = makeGrid();
         let spinWin = 0;
         let cascade = 0;
-        render(cells);
-        await sleep(220);
+        render(cells, [], Array.from({ length: 20 }, (_, index) => index));
+        const openingScatters = scatterCount(cells);
+        if (openingScatters === 3) {
+          nodes.message.textContent = "3 Ostrich Scatters landed. One more would start free spins.";
+          await sleep(480);
+        }
+        await sleep(260);
         while (cascade < cascadeMultipliers.length) {
           state.multiplier = cascadeMultipliers[cascade];
           updateStats();
@@ -622,17 +711,30 @@
           }
           cascade += 1;
         }
+        state.lastCascadeCount = cascade;
         const scatters = scatterCount(cells);
         if (scatters >= 4) {
           state.freeSpins += 8;
+          state.featureActive = true;
+          state.featureStartSpins = state.freeSpins;
+          state.featureWin = 0;
           nodes.message.textContent = "4 Ostrich Scatters triggered 8 free spins.";
-          showWinOverlay("Free spins", "8 awarded");
-          await sleep(1400);
+          showWinOverlay("Free spins", "8 awarded", 2600);
+          await sleep(1700);
         }
         state.lastWin = spinWin;
         state.totalWon += spinWin;
         state.balance += spinWin;
-        if (spinWin > 0 && scatters < 4) {
+        state.spins += 1;
+        if (spinWin > 0) state.hitSpins += 1;
+        state.biggestWin = Math.max(state.biggestWin, spinWin);
+        if (isFreeSpin) state.featureWin += spinWin;
+        if (isFreeSpin && state.featureActive && state.freeSpins === 0) {
+          nodes.message.textContent = "Free spins complete: " + money(state.featureWin) + " total feature win.";
+          showWinOverlay("Feature complete", money(state.featureWin), 2800);
+          state.featureActive = false;
+          await sleep(900);
+        } else if (spinWin > 0 && scatters < 4) {
           nodes.message.textContent = cascade > 1
             ? cascade + " cascades paid " + money(spinWin) + "."
             : "Payline win: " + money(spinWin) + ".";
@@ -659,11 +761,11 @@
 
       function paytableMarkup() {
         const rows = symbols.map((symbol) => "<tr><td>" + symbol.name + "</td><td>" + (symbol.wild ? "Substitutes" : symbol.scatter ? "Scatter / pays" : symbol.bonus ? "Bonus" : "Pays") + "</td><td>" + (symbol.pay[3] || "-") + "</td><td>" + (symbol.pay[4] || "-") + "</td><td>" + (symbol.pay[5] || "-") + "</td></tr>").join("");
-        return '<p class="info-copy">Demo paytable. Wins pay left to right. Cascades replace winning symbols and increase the multiplier through x1, x2, x3 and x5. Four or more Ostrich Scatters award 8 free spins.</p><table class="paytable"><thead><tr><th>Symbol</th><th>Role</th><th>3x</th><th>4x</th><th>5x</th></tr></thead><tbody>' + rows + '</tbody></table><p class="info-copy">Target direction: 94% RTP, medium volatility. Current build is a stakeholder demo and not certified for real-money use.</p>';
+        return '<p class="info-copy">Demo paytable. Wins pay left to right. Cascades replace winning symbols and increase the multiplier through x1, x2, x3 and x5. Four or more Ostrich Scatters award 8 free spins.</p><table class="paytable"><thead><tr><th>Symbol</th><th>Role</th><th>3x</th><th>4x</th><th>5x</th></tr></thead><tbody>' + rows + '</tbody></table><p class="info-copy">Target direction: 94% RTP, medium volatility. Latest quick simulation tracks around 94% before certification tuning. Current build is a stakeholder demo and not certified for real-money use.</p>';
       }
 
       function aiBuildMarkup() {
-        return '<div class="info-grid"><div class="info-card"><span>Phase</span><strong>AAA demo sprint</strong></div><div class="info-card"><span>Features</span><strong>Cascades + free spins</strong></div><div class="info-card"><span>Wild feature</span><strong>Cheeky monkey step</strong></div><div class="info-card"><span>Assets</span><strong>Animal symbol set</strong></div><div class="info-card"><span>RTP target</span><strong>94%</strong></div><div class="info-card"><span>Volatility</span><strong>Medium</strong></div></div><p class="info-copy">Plai AI recommendation: next tune animal reel strips and feature frequency, then add stronger free-spin choreography, big-win count-up timing and a lightweight sound layer.</p>';
+        return '<div class="info-grid"><div class="info-card"><span>Phase</span><strong>AAA demo sprint</strong></div><div class="info-card"><span>Features</span><strong>Cascades + free spins</strong></div><div class="info-card"><span>Wild feature</span><strong>Cheeky monkey step</strong></div><div class="info-card"><span>Assets</span><strong>Animal symbol set</strong></div><div class="info-card"><span>RTP target</span><strong>94%</strong></div><div class="info-card"><span>Volatility</span><strong>Medium</strong></div></div><p class="info-copy">Plai AI recommendation: current maths is close enough for demo review. Next tune reel strips with larger simulations, add line-by-line win count-up, and connect recommendations to creator-side apply actions.</p>';
       }
 
       render(makeGrid());
@@ -675,7 +777,7 @@
       aiBuildButton.addEventListener("click", () => openInfo("Plai AI build summary", aiBuildMarkup()));
       infoClose.addEventListener("click", closeInfo);
       infoModal.addEventListener("click", (event) => { if (event.target === infoModal) closeInfo(); });
-      window.bubblegumStampedeTestApi = { makeGrid, evaluate, spin, state };
+      window.bubblegumStampedeTestApi = { makeGrid, evaluate, spin, state, sessionRtp };
     })();
   </script>
 </body>
