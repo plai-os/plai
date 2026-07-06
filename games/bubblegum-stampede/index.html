@@ -155,11 +155,13 @@
     .feature-meter {
       display: none;
       grid-column: 1 / -1;
-      grid-template-columns: 1fr 1fr;
+      grid-template-columns: minmax(0, 1.35fr) minmax(120px, 0.65fr);
       gap: 8px;
       margin-top: 2px;
     }
-    .feature-pill {
+    .feature-pill,
+    .feature-progress {
+      min-height: 34px;
       padding: 8px 10px;
       border-radius: 999px;
       background: rgba(255, 233, 91, 0.18);
@@ -168,6 +170,31 @@
       font-weight: 900;
       text-transform: uppercase;
       text-align: center;
+    }
+    .feature-progress {
+      position: relative;
+      overflow: hidden;
+      display: grid;
+      place-items: center;
+      border: 1px solid rgba(255,255,255,0.18);
+      background: rgba(18, 5, 42, 0.38);
+      box-shadow: inset 0 0 18px rgba(0,0,0,0.22);
+    }
+    .feature-progress-fill {
+      position: absolute;
+      inset: 0 auto 0 0;
+      width: var(--free-progress, 0%);
+      border-radius: inherit;
+      background: linear-gradient(90deg, #ffe95b, #ff43ad 58%, #60eadb);
+      box-shadow: 0 0 24px rgba(255,233,91,0.34);
+      transition: width 420ms cubic-bezier(.2,.84,.24,1);
+    }
+    .feature-progress strong {
+      position: relative;
+      z-index: 1;
+      color: #fff;
+      text-shadow: 0 2px 8px rgba(18,5,42,0.58);
+      letter-spacing: 0;
     }
     .game-shell.is-free-mode .feature-meter { display: grid; }
 
@@ -565,7 +592,10 @@
           <span id="statusMessage">Press Spin to start the stampede.</span>
           <span class="multiplier" id="cascadeMeter">x1</span>
           <div class="feature-meter" aria-label="Free spins feature meters">
-            <span class="feature-pill" id="featureSpinsValue">Free spins: 0</span>
+            <div class="feature-progress" id="featureProgress" style="--free-progress: 0%">
+              <span class="feature-progress-fill" aria-hidden="true"></span>
+              <strong id="featureSpinsValue">Free spins: 0</strong>
+            </div>
             <span class="feature-pill" id="featureWinValue">Feature win: £0.00</span>
           </div>
         </div>
@@ -728,6 +758,7 @@
         aiInsight: document.getElementById("aiInsightValue"),
         applyRecommendation: applyRecommendationButton,
         soundToggle,
+        featureProgress: document.getElementById("featureProgress"),
         featureSpins: document.getElementById("featureSpinsValue"),
         featureWin: document.getElementById("featureWinValue")
       };
@@ -920,7 +951,10 @@
         nodes.lastWin.textContent = money(state.lastWin);
         nodes.totalWon.textContent = money(state.totalWon);
         nodes.freeSpins.textContent = format(state.freeSpins);
-        nodes.featureSpins.textContent = "Free spins: " + format(state.freeSpins);
+        const featureTotal = Math.max(state.featureStartSpins || state.freeSpins || 0, state.freeSpins || 0);
+        const featureProgress = featureTotal > 0 ? Math.max(0, Math.min(100, state.freeSpins / featureTotal * 100)) : 0;
+        nodes.featureProgress.style.setProperty("--free-progress", featureProgress.toFixed(1) + "%");
+        nodes.featureSpins.textContent = featureTotal > 0 ? "Free spins: " + format(state.freeSpins) + " / " + format(featureTotal) : "Free spins: 0";
         nodes.featureWin.textContent = "Feature win: " + money(state.featureWin);
         nodes.rtp.textContent = state.totalStaked > 0 ? (state.totalWon / state.totalStaked * 100).toFixed(2) + "%" : "0.00%";
         nodes.avgRtp.textContent = targetRtp.toFixed(2) + "%";
@@ -1009,7 +1043,7 @@
         winOverlayTitle.textContent = title;
         winOverlayAmount.textContent = amount;
         winOverlay.hidden = false;
-        overlayTimer = window.setTimeout(() => { winOverlay.hidden = true; }, duration);
+        overlayTimer = window.setTimeout(() => { winOverlay.hidden = true; }, duration * 2);
       }
 
       function animateMoney(node, from, to, duration = 760) {
