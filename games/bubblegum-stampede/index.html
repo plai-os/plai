@@ -48,6 +48,13 @@
       overflow: hidden;
     }
 
+    .game-shell.is-free-mode .meter-header,
+    .game-shell.is-free-mode .reel-panel,
+    .game-shell.is-free-mode .control-panel {
+      border-color: rgba(255, 233, 91, 0.46);
+      box-shadow: 0 0 34px rgba(255, 233, 91, 0.18), 0 20px 60px rgba(35, 7, 76, 0.26);
+    }
+
     .meter-header,
     .reel-panel,
     .control-panel {
@@ -173,9 +180,15 @@
 
     .symbol.is-win { outline: 4px solid var(--yellow); transform: scale(1.04); }
     .symbol.is-new { animation: symbolDrop 220ms ease-out both; }
+    .symbol.is-walking { animation: monkeyStep 360ms ease-in-out both; outline: 4px solid #ff43ad; }
     @keyframes symbolDrop {
       from { opacity: 0; transform: translateY(-18px) scale(0.92); }
       to { opacity: 1; transform: translateY(0) scale(1); }
+    }
+    @keyframes monkeyStep {
+      0% { transform: translateX(-22px) rotate(-4deg) scale(0.96); }
+      55% { transform: translateX(8px) rotate(4deg) scale(1.06); }
+      100% { transform: translateX(0) rotate(0) scale(1); }
     }
     .gum { background: linear-gradient(135deg, #ff91d4, #ff43ad); }
     .pop { background: linear-gradient(135deg, #b47bff, #661bb4); color: #fff; }
@@ -229,6 +242,34 @@
 
     .feature-list { display: grid; gap: 10px; margin: 0; padding: 0; list-style: none; }
     .feature-list li { padding: 10px 12px; border-radius: 14px; background: var(--panel); color: rgba(255,255,255,0.86); font-size: 14px; font-weight: 750; }
+
+    .win-overlay[hidden] { display: none; }
+    .win-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 18;
+      display: grid;
+      place-items: center;
+      pointer-events: none;
+    }
+    .win-card {
+      min-width: min(440px, 82vw);
+      padding: 22px 26px;
+      border: 2px solid rgba(255, 233, 91, 0.82);
+      border-radius: 22px;
+      background: linear-gradient(135deg, rgba(255,67,173,0.94), rgba(58,12,119,0.96));
+      color: #fff;
+      text-align: center;
+      box-shadow: 0 30px 90px rgba(18, 5, 42, 0.62), 0 0 44px rgba(255, 233, 91, 0.3);
+      animation: winPop 760ms ease both;
+    }
+    .win-card span { display: block; color: var(--yellow); font-size: 14px; font-weight: 950; text-transform: uppercase; }
+    .win-card strong { display: block; margin-top: 8px; font-size: clamp(34px, 5vw, 62px); line-height: 1; }
+    @keyframes winPop {
+      0% { opacity: 0; transform: scale(0.74); }
+      35% { opacity: 1; transform: scale(1.08); }
+      100% { opacity: 0; transform: scale(1); }
+    }
 
     .info-modal[hidden] { display: none; }
     .info-modal {
@@ -315,12 +356,19 @@
         </div>
         <ul class="feature-list">
           <li>Cascading wins replace paid symbols and can chain.</li>
-          <li>Wild candies substitute on left-to-right paylines.</li>
+          <li>Cheeky Monkey Wild substitutes on left-to-right paylines.</li>
           <li>Four Sugar Stars award 8 free spins in this demo.</li>
         </ul>
       </aside>
     </section>
   </main>
+
+  <div class="win-overlay" id="winOverlay" hidden>
+    <div class="win-card">
+      <span id="winOverlayTitle">Big win</span>
+      <strong id="winOverlayAmount">£0.00</strong>
+    </div>
+  </div>
 
   <div class="info-modal" id="infoModal" hidden>
     <section class="info-dialog" role="dialog" aria-modal="true" aria-labelledby="infoTitle">
@@ -378,7 +426,7 @@
         },
         {
           id: "wild",
-          name: "Walking Wild",
+          name: "Cheeky Monkey Wild",
           className: "pop",
           weight: 2,
           wild: true,
@@ -392,12 +440,13 @@
           weight: 3,
           bonus: true,
           pay: { 3: 3.9, 4: 19.5, 5: 97.5 },
-          image: "assets/symbol-wild.webp"
+          image: "assets/symbol-gum.webp"
         }
       ];
       const betSteps = [1, 2, 5, 10];
       const cascadeMultipliers = [1, 2, 3, 5];
       const state = { balance: 1000, totalWon: 0, lastWin: 0, betIndex: 1, multiplier: 1, freeSpins: 0, spinning: false };
+      const shell = document.querySelector(".game-shell");
       const grid = document.getElementById("reelGrid");
       const spinButton = document.getElementById("spinButton");
       const betDown = document.getElementById("betDown");
@@ -408,6 +457,9 @@
       const infoTitle = document.getElementById("infoTitle");
       const infoBody = document.getElementById("infoBody");
       const infoClose = document.getElementById("infoClose");
+      const winOverlay = document.getElementById("winOverlay");
+      const winOverlayTitle = document.getElementById("winOverlayTitle");
+      const winOverlayAmount = document.getElementById("winOverlayAmount");
       const nodes = {
         balance: document.getElementById("balanceValue"),
         lastWin: document.getElementById("lastWinValue"),
@@ -428,12 +480,13 @@
         return Array.from({ length: 20 }, () => pickSymbol());
       }
 
-      function render(cells, winning = [], fresh = []) {
+      function render(cells, winning = [], fresh = [], walking = []) {
         const wins = new Set(winning);
         const freshCells = new Set(fresh);
+        const walkingCells = new Set(walking);
         grid.replaceChildren(...cells.map((symbol, index) => {
           const cell = document.createElement("div");
-          cell.className = "symbol " + symbol.className + (wins.has(index) ? " is-win" : "") + (freshCells.has(index) ? " is-new" : "");
+          cell.className = "symbol " + symbol.className + (wins.has(index) ? " is-win" : "") + (freshCells.has(index) ? " is-new" : "") + (walkingCells.has(index) ? " is-walking" : "");
           cell.setAttribute("aria-label", symbol.name);
           const image = document.createElement("img");
           image.src = symbol.image;
@@ -480,6 +533,7 @@
         nodes.bet.textContent = format(bet());
         nodes.meter.textContent = "x" + state.multiplier;
         spinButton.textContent = state.freeSpins > 0 ? "FREE SPIN" : "SPIN";
+        shell.classList.toggle("is-free-mode", state.freeSpins > 0 || state.spinning && spinButton.textContent === "FREE SPIN");
       }
 
       function changeBet(delta) {
@@ -502,6 +556,23 @@
 
       function scatterCount(cells) {
         return cells.filter((symbol) => symbol.scatter).length;
+      }
+
+      function walkMonkeyWild(cells) {
+        const wildIndex = cells.findIndex((symbol, index) => symbol.wild && index % 5 < 4);
+        if (wildIndex < 0) return null;
+        const target = wildIndex + 1;
+        const next = cells.slice();
+        next[target] = cells[wildIndex];
+        next[wildIndex] = pickSymbol();
+        return { cells: next, from: wildIndex, to: target };
+      }
+
+      function showWinOverlay(title, amount) {
+        winOverlayTitle.textContent = title;
+        winOverlayAmount.textContent = amount;
+        winOverlay.hidden = false;
+        window.setTimeout(() => { winOverlay.hidden = true; }, 900);
       }
 
       async function spin() {
@@ -535,22 +606,32 @@
           cells = replaced.cells;
           render(cells, [], replaced.fresh);
           await sleep(220);
+          const monkeyStep = walkMonkeyWild(cells);
+          if (monkeyStep) {
+            cells = monkeyStep.cells;
+            nodes.message.textContent = "Cheeky Monkey Wild stepped one reel right.";
+            render(cells, [], [monkeyStep.from], [monkeyStep.to]);
+            await sleep(320);
+          }
           cascade += 1;
         }
         const scatters = scatterCount(cells);
         if (scatters >= 4) {
           state.freeSpins += 8;
           nodes.message.textContent = "4 Sugar Stars triggered 8 free spins.";
-          await sleep(360);
+          showWinOverlay("Free spins", "8 awarded");
+          await sleep(760);
         }
         state.lastWin = spinWin;
         state.totalWon += spinWin;
         state.balance += spinWin;
-        if (spinWin > 0 && scatters < 3) {
+        if (spinWin > 0 && scatters < 4) {
           nodes.message.textContent = cascade > 1
             ? cascade + " cascades paid " + money(spinWin) + "."
             : "Payline win: " + money(spinWin) + ".";
-        } else if (spinWin <= 0 && scatters < 3) {
+          if (spinWin >= bet() * 20) showWinOverlay("Mega win", money(spinWin));
+          else if (spinWin >= bet() * 8) showWinOverlay("Big win", money(spinWin));
+        } else if (spinWin <= 0 && scatters < 4) {
           nodes.message.textContent = "No win this spin. Try again.";
         }
         state.multiplier = 1;
@@ -575,7 +656,7 @@
       }
 
       function aiBuildMarkup() {
-        return '<div class="info-grid"><div class="info-card"><span>Phase</span><strong>AAA demo sprint</strong></div><div class="info-card"><span>Features</span><strong>Cascades + free spins</strong></div><div class="info-card"><span>Math</span><strong>Demo tuning</strong></div><div class="info-card"><span>Assets</span><strong>Impossible-style symbols</strong></div><div class="info-card"><span>RTP target</span><strong>95%</strong></div><div class="info-card"><span>Volatility</span><strong>Medium</strong></div></div><p class="info-copy">Plai AI recommendation: next optimise reel strips and feature frequency, then add walking wild choreography, big-win sequences and sound layers.</p>';
+        return '<div class="info-grid"><div class="info-card"><span>Phase</span><strong>AAA demo sprint</strong></div><div class="info-card"><span>Features</span><strong>Cascades + free spins</strong></div><div class="info-card"><span>Wild feature</span><strong>Cheeky monkey step</strong></div><div class="info-card"><span>Assets</span><strong>Cleaner symbol set</strong></div><div class="info-card"><span>RTP target</span><strong>95%</strong></div><div class="info-card"><span>Volatility</span><strong>Medium</strong></div></div><p class="info-copy">Plai AI recommendation: next optimise reel strips and feature frequency, then add stronger free-spin choreography, big-win count-up timing and a lightweight sound layer.</p>';
       }
 
       render(makeGrid());
