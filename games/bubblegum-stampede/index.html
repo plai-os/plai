@@ -180,7 +180,8 @@
 
     .symbol.is-win { outline: 4px solid var(--yellow); transform: scale(1.04); }
     .symbol.is-new { animation: symbolDrop 220ms ease-out both; }
-    .symbol.is-spinning { animation: reelSweep 620ms cubic-bezier(.2,.78,.18,1) both; animation-delay: var(--spin-delay, 0ms); }
+    .symbol.is-spinning { animation: reelSpin 220ms linear infinite; animation-delay: var(--spin-delay, 0ms); }
+    .symbol.is-locking { animation: reelLock 260ms cubic-bezier(.2,.84,.24,1) both; }
     .symbol.is-walking { animation: monkeyStep 360ms ease-in-out both; outline: 4px solid #ff43ad; }
     @keyframes symbolDrop {
       from { opacity: 0; transform: translateY(-18px) scale(0.92); }
@@ -191,10 +192,14 @@
       55% { transform: translateX(8px) rotate(4deg) scale(1.06); }
       100% { transform: translateX(0) rotate(0) scale(1); }
     }
-    @keyframes reelSweep {
-      0% { opacity: 0.78; transform: translateY(-18px) scale(0.98); filter: blur(0) saturate(1.08); }
-      36% { opacity: 0.42; transform: translateY(22px) scale(0.94); filter: blur(8px) saturate(1.35); }
-      72% { opacity: 0.9; transform: translateY(-6px) scale(1.02); filter: blur(1px) saturate(1.08); }
+    @keyframes reelSpin {
+      0% { opacity: 0.58; transform: translateY(-18px) scale(0.96); filter: blur(7px) saturate(1.35); }
+      50% { opacity: 0.9; transform: translateY(10px) scale(1.01); filter: blur(4px) saturate(1.18); }
+      100% { opacity: 0.58; transform: translateY(26px) scale(0.96); filter: blur(8px) saturate(1.35); }
+    }
+    @keyframes reelLock {
+      0% { opacity: 0.72; transform: translateY(-22px) scale(0.96); filter: blur(5px) saturate(1.24); }
+      72% { opacity: 1; transform: translateY(4px) scale(1.03); filter: blur(0) saturate(1.08); }
       100% { opacity: 1; transform: translateY(0) scale(1); filter: blur(0) saturate(1); }
     }
     .gum { background: linear-gradient(135deg, #ff91d4, #ff43ad); }
@@ -526,16 +531,17 @@
         return Array.from({ length: 20 }, () => pickSymbol());
       }
 
-      function render(cells, winning = [], fresh = [], walking = [], spinning = []) {
+      function render(cells, winning = [], fresh = [], walking = [], spinning = [], locking = []) {
         const wins = new Set(winning);
         const freshCells = new Set(fresh);
         const walkingCells = new Set(walking);
         const spinningCells = new Set(spinning);
+        const lockingCells = new Set(locking);
         grid.replaceChildren(...cells.map((symbol, index) => {
           const cell = document.createElement("div");
-          cell.className = "symbol " + symbol.className + (wins.has(index) ? " is-win" : "") + (freshCells.has(index) ? " is-new" : "") + (walkingCells.has(index) ? " is-walking" : "") + (spinningCells.has(index) ? " is-spinning" : "");
+          cell.className = "symbol " + symbol.className + (wins.has(index) ? " is-win" : "") + (freshCells.has(index) ? " is-new" : "") + (walkingCells.has(index) ? " is-walking" : "") + (spinningCells.has(index) ? " is-spinning" : "") + (lockingCells.has(index) ? " is-locking" : "");
           cell.setAttribute("aria-label", symbol.name);
-          if (spinningCells.has(index)) cell.style.setProperty("--spin-delay", (index % 5 * 58 + Math.floor(index / 5) * 18) + "ms");
+          if (spinningCells.has(index)) cell.style.setProperty("--spin-delay", Math.floor(index / 5) * 24 + "ms");
           const image = document.createElement("img");
           image.src = symbol.image;
           image.alt = "";
@@ -692,11 +698,27 @@
         updateInsights();
       }
 
-      async function spinReelsPreview(cells, isFreeSpin) {
-        const allCells = Array.from({ length: 20 }, (_, index) => index);
+      async function spinReelsToResult(finalCells, isFreeSpin) {
+        const displayCells = makeGrid();
+        const spinningColumns = new Set([0, 1, 2, 3, 4]);
+        const columnIndexes = (col) => [0, 1, 2, 3].map((row) => row * 5 + col);
+        const spinningIndexes = () => Array.from(spinningColumns).flatMap(columnIndexes);
         nodes.message.textContent = isFreeSpin ? "Free spin reels rolling..." : "Reels rolling...";
-        render(cells, [], [], [], allCells);
-        await sleep(820);
+        render(displayCells, [], [], [], spinningIndexes());
+        for (let col = 0; col < 5; col += 1) {
+          const ticks = 5 + col * 2;
+          for (let tick = 0; tick < ticks; tick += 1) {
+            for (const activeCol of spinningColumns) {
+              columnIndexes(activeCol).forEach((index) => { displayCells[index] = pickSymbol(); });
+            }
+            render(displayCells, [], [], [], spinningIndexes());
+            await sleep(Math.min(44 + tick * 7 + col * 6, 105));
+          }
+          columnIndexes(col).forEach((index) => { displayCells[index] = finalCells[index]; });
+          spinningColumns.delete(col);
+          render(displayCells, [], [], [], spinningIndexes(), columnIndexes(col));
+          await sleep(col === 4 ? 300 : 150);
+        }
       }
 
       async function spin() {
@@ -724,14 +746,11 @@
         state.lastWin = 0;
         nodes.message.textContent = isFreeSpin ? "Free spin stampede..." : "Stampede spinning...";
         state.multiplier = 1;
-        const previewCells = makeGrid();
-        render(previewCells);
-        await sleep(90);
-        await spinReelsPreview(previewCells, isFreeSpin);
         let cells = makeGrid();
+        await spinReelsToResult(cells, isFreeSpin);
         let spinWin = 0;
         let cascade = 0;
-        render(cells, [], Array.from({ length: 20 }, (_, index) => index));
+        render(cells);
         const openingScatters = scatterCount(cells);
         if (openingScatters === 3) {
           nodes.message.textContent = "3 Ostrich Scatters landed. One more would start free spins.";
