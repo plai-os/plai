@@ -573,6 +573,7 @@
       let overlayTimer = 0;
       let currentCells = [];
       let audioContext = null;
+      let audioMaster = null;
       let spinHum = null;
       const shell = document.querySelector(".game-shell");
       const grid = document.getElementById("reelGrid");
@@ -650,9 +651,27 @@
       }
 
       function ensureAudio() {
-        if (!audioContext) audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        if (!audioContext) {
+          audioContext = new (window.AudioContext || window.webkitAudioContext)();
+          audioMaster = audioContext.createGain();
+          audioMaster.gain.setValueAtTime(state.soundOn ? 1 : 0, audioContext.currentTime);
+          audioMaster.connect(audioContext.destination);
+        }
         if (audioContext.state === "suspended") audioContext.resume();
         return audioContext;
+      }
+
+      function audioOutput() {
+        ensureAudio();
+        return audioMaster || audioContext.destination;
+      }
+
+      function setMasterMute(muted) {
+        if (!audioContext || !audioMaster) return;
+        const now = audioContext.currentTime;
+        audioMaster.gain.cancelScheduledValues(now);
+        audioMaster.gain.setValueAtTime(audioMaster.gain.value, now);
+        audioMaster.gain.linearRampToValueAtTime(muted ? 0 : 1, now + 0.04);
       }
 
       function tone(frequency, duration = 0.16, type = "sine", gain = 0.018, delay = 0, detune = 0) {
@@ -671,7 +690,7 @@
         amp.gain.exponentialRampToValueAtTime(gain, start + 0.024);
         amp.gain.exponentialRampToValueAtTime(Math.max(gain * 0.24, 0.0002), start + duration * 0.58);
         amp.gain.exponentialRampToValueAtTime(0.0001, start + duration);
-        osc.connect(filter).connect(amp).connect(ctx.destination);
+        osc.connect(filter).connect(amp).connect(audioOutput());
         osc.start(start);
         osc.stop(start + duration + 0.04);
       }
@@ -697,7 +716,7 @@
         amp.gain.exponentialRampToValueAtTime(gain, start + 0.012);
         amp.gain.exponentialRampToValueAtTime(0.0001, start + duration);
         source.buffer = buffer;
-        source.connect(filter).connect(amp).connect(ctx.destination);
+        source.connect(filter).connect(amp).connect(audioOutput());
         source.start(start);
       }
 
@@ -716,7 +735,7 @@
       function soundIcon(on) {
         return on
           ? '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9H4z"></path><path d="M16 8.5c1.2 1 1.8 2.1 1.8 3.5s-.6 2.5-1.8 3.5"></path><path d="M18.8 6c1.8 1.6 2.7 3.6 2.7 6s-.9 4.4-2.7 6"></path></svg>'
-          : '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9H4z"></path><path d="M18 9l4 4"></path><path d="M22 9l-4 4"></path></svg>';
+          : '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9H4z"></path><path d="M3 3l18 18"></path></svg>';
       }
 
       function updateSoundToggle() {
@@ -729,6 +748,7 @@
       function toggleSound() {
         state.soundOn = !state.soundOn;
         if (!state.soundOn) stopSpinHum();
+        setMasterMute(!state.soundOn);
         try { localStorage.setItem("animalStampedeSound", state.soundOn ? "on" : "off"); } catch (error) {}
         updateSoundToggle();
         if (state.soundOn) sound("win");
@@ -737,8 +757,8 @@
       function sound(name) {
         if (!state.soundOn) { stopSpinHum(); return; }
         if (name === "spin") stopSpinHum();
-        else if (name === "stop") { stopSpinHum(); tone(164, 0.12, "sine", 0.012); shimmer(0.02, 0.007); }
-        else if (name === "reelStop") { tone(246, 0.075, "sine", 0.010); shimmer(0, 0.005); }
+        else if (name === "stop") stopSpinHum();
+        else if (name === "reelStop") return;
         else if (name === "win") { chord([523, 659, 784], 0.26, "sine", 0.014); shimmer(0.04, 0.014); tone(1046, 0.28, "sine", 0.010, 0.08); }
         else if (name === "big") { chord([392, 494, 587], 0.34, "sine", 0.016); chord([523, 659, 784], 0.38, "sine", 0.014, 0.16); shimmer(0.1, 0.022); }
         else if (name === "stampede") { [294, 392, 523, 659, 784, 1046].forEach((freq, i) => tone(freq, 0.24, "sine", 0.015, i * 0.055)); shimmer(0.18, 0.03); }
@@ -1115,6 +1135,7 @@
       spinButton.addEventListener("click", spin);
       betDown.addEventListener("click", () => changeBet(-1));
       betUp.addEventListener("click", () => changeBet(1));
+      soundToggle.addEventListener("click", toggleSound);
       paytableButton.addEventListener("click", () => openInfo("Paytable", paytableMarkup()));
       aiBuildButton.addEventListener("click", () => openInfo("Plai AI build summary", aiBuildMarkup()));
       applyRecommendationButton.addEventListener("click", applyRecommendation);
