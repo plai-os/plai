@@ -51,8 +51,15 @@
     .game-shell.is-free-mode .meter-header,
     .game-shell.is-free-mode .reel-panel,
     .game-shell.is-free-mode .control-panel {
-      border-color: rgba(255, 233, 91, 0.46);
-      box-shadow: 0 0 34px rgba(255, 233, 91, 0.18), 0 20px 60px rgba(35, 7, 76, 0.26);
+      border-color: rgba(255, 233, 91, 0.58);
+      box-shadow: 0 0 44px rgba(255, 233, 91, 0.24), 0 20px 60px rgba(35, 7, 76, 0.26);
+    }
+    .game-shell.is-free-mode {
+      background:
+        radial-gradient(circle at 14% 14%, rgba(255, 233, 91, 0.28), transparent 18%),
+        radial-gradient(circle at 86% 18%, rgba(96, 234, 219, 0.28), transparent 20%),
+        linear-gradient(135deg, #4b087b 0%, #8d2ad2 48%, #ff9dd9 100%);
+      border-radius: 0;
     }
 
     .meter-header,
@@ -119,9 +126,9 @@
 
     .message-strip {
       min-height: 48px;
-      display: flex;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
       align-items: center;
-      justify-content: space-between;
       gap: 12px;
       padding: 12px 16px;
       border-radius: 16px;
@@ -129,6 +136,25 @@
       font-size: clamp(16px, 1.8vw, 24px);
       font-weight: 950;
     }
+
+    .feature-meter {
+      display: none;
+      grid-column: 1 / -1;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin-top: 2px;
+    }
+    .feature-pill {
+      padding: 8px 10px;
+      border-radius: 999px;
+      background: rgba(255, 233, 91, 0.18);
+      color: rgba(255,255,255,0.9);
+      font-size: 12px;
+      font-weight: 900;
+      text-transform: uppercase;
+      text-align: center;
+    }
+    .game-shell.is-free-mode .feature-meter { display: grid; }
 
     .multiplier {
       min-width: 86px;
@@ -209,14 +235,16 @@
     .symbol.is-spinning { animation: reelSpin 220ms linear infinite; animation-delay: var(--spin-delay, 0ms); }
     .symbol.is-locking { animation: reelLock 260ms cubic-bezier(.2,.84,.24,1) both; }
     .reel-strip .symbol { box-shadow: inset 0 -7px 0 rgba(0,0,0,0.1), 0 8px 18px rgba(28, 6, 65, 0.2); }
-    .symbol.is-walking { animation: monkeyStep 360ms ease-in-out both; outline: 4px solid #ff43ad; }
+    .symbol.is-walking { animation: monkeyStep 520ms ease-in-out both; outline: 4px solid #ff43ad; box-shadow: 0 0 28px rgba(255,67,173,0.48), inset 0 -9px 0 rgba(0,0,0,0.1); }
+    .symbol.is-monkey-trail { outline: 3px dashed rgba(255,233,91,0.86); box-shadow: 0 0 26px rgba(255,233,91,0.32), inset 0 -9px 0 rgba(0,0,0,0.1); }
     @keyframes symbolDrop {
       from { opacity: 0; transform: translateY(-18px) scale(0.92); }
       to { opacity: 1; transform: translateY(0) scale(1); }
     }
     @keyframes monkeyStep {
-      0% { transform: translateX(-22px) rotate(-4deg) scale(0.96); }
-      55% { transform: translateX(8px) rotate(4deg) scale(1.06); }
+      0% { transform: translateX(-28px) rotate(-5deg) scale(0.92); }
+      45% { transform: translateX(10px) rotate(5deg) scale(1.1); }
+      70% { transform: translateX(-3px) rotate(-2deg) scale(1.04); }
       100% { transform: translateX(0) rotate(0) scale(1); }
     }
     @keyframes reelSpin {
@@ -323,6 +351,11 @@
     }
     .win-card span { display: block; color: var(--yellow); font-size: 14px; font-weight: 950; text-transform: uppercase; }
     .win-card strong { display: block; margin-top: 8px; font-size: clamp(34px, 5vw, 62px); line-height: 1; }
+    .win-card.is-mini { border-color: rgba(96,234,219,0.82); box-shadow: 0 24px 70px rgba(18,5,42,0.54), 0 0 34px rgba(96,234,219,0.24); }
+    .win-card.is-big { border-color: rgba(255,233,91,0.9); }
+    .win-card.is-mega { border-color: rgba(255,67,173,0.9); box-shadow: 0 30px 100px rgba(18,5,42,0.64), 0 0 54px rgba(255,67,173,0.38); }
+    .win-card.is-stampede { border-color: #fff; background: linear-gradient(135deg, rgba(255,233,91,0.96), rgba(255,67,173,0.96), rgba(58,12,119,0.98)); color: var(--ink); box-shadow: 0 34px 120px rgba(18,5,42,0.7), 0 0 70px rgba(255,233,91,0.42); }
+    .win-card.is-stampede span { color: var(--ink); }
     @keyframes winPop {
       0% { opacity: 0; transform: scale(0.74); }
       28% { opacity: 1; transform: scale(1.08); }
@@ -399,6 +432,10 @@
         <div class="message-strip">
           <span id="statusMessage">Press Spin to start the stampede.</span>
           <span class="multiplier" id="cascadeMeter">x1</span>
+          <div class="feature-meter" aria-label="Free spins feature meters">
+            <span class="feature-pill" id="featureSpinsValue">Free spins: 0</span>
+            <span class="feature-pill" id="featureWinValue">Feature win: £0.00</span>
+          </div>
         </div>
         <div class="reel-grid" id="reelGrid" aria-label="Five reels with four rows"></div>
         <div class="win-overlay" id="winOverlay" hidden>
@@ -518,6 +555,8 @@
       const state = { balance: 1000, totalWon: 0, totalStaked: 0, lastWin: 0, betIndex: 1, multiplier: 1, freeSpins: 0, spinning: false, spins: 0, hitSpins: 0, lastCascadeCount: 0, featureActive: false, featureStartSpins: 0, featureWin: 0, biggestWin: 0, optimisationApplied: false, featureIntroPending: false };
       let overlayTimer = 0;
       let currentCells = [];
+      let audioContext = null;
+      let spinHum = null;
       const shell = document.querySelector(".game-shell");
       const grid = document.getElementById("reelGrid");
       const spinButton = document.getElementById("spinButton");
@@ -533,6 +572,7 @@
       const winOverlay = document.getElementById("winOverlay");
       const winOverlayTitle = document.getElementById("winOverlayTitle");
       const winOverlayAmount = document.getElementById("winOverlayAmount");
+      const winCard = winOverlay.querySelector(".win-card");
       const nodes = {
         balance: document.getElementById("balanceValue"),
         lastWin: document.getElementById("lastWinValue"),
@@ -546,7 +586,9 @@
         rtpGap: document.getElementById("rtpGapValue"),
         hitRate: document.getElementById("hitRateValue"),
         aiInsight: document.getElementById("aiInsightValue"),
-        applyRecommendation: applyRecommendationButton
+        applyRecommendation: applyRecommendationButton,
+        featureSpins: document.getElementById("featureSpinsValue"),
+        featureWin: document.getElementById("featureWinValue")
       };
 
       function bet() { return betSteps[state.betIndex]; }
@@ -573,7 +615,7 @@
         return cell;
       }
 
-      function render(cells, winning = [], fresh = [], walking = [], spinning = [], locking = []) {
+      function render(cells, winning = [], fresh = [], walking = [], spinning = [], locking = [], monkeyTrail = []) {
         currentCells = cells.slice();
         grid.classList.remove("is-rolling");
         const wins = new Set(winning);
@@ -581,10 +623,66 @@
         const walkingCells = new Set(walking);
         const spinningCells = new Set(spinning);
         const lockingCells = new Set(locking);
+        const monkeyTrailCells = new Set(monkeyTrail);
         grid.replaceChildren(...cells.map((symbol, index) => {
-          const classes = (wins.has(index) ? " is-win" : "") + (freshCells.has(index) ? " is-new" : "") + (walkingCells.has(index) ? " is-walking" : "") + (spinningCells.has(index) ? " is-spinning" : "") + (lockingCells.has(index) ? " is-locking" : "");
+          const classes = (wins.has(index) ? " is-win" : "") + (freshCells.has(index) ? " is-new" : "") + (walkingCells.has(index) ? " is-walking" : "") + (spinningCells.has(index) ? " is-spinning" : "") + (lockingCells.has(index) ? " is-locking" : "") + (monkeyTrailCells.has(index) ? " is-monkey-trail" : "");
           return makeSymbolNode(symbol, index, classes.trim());
         }));
+      }
+
+      function ensureAudio() {
+        if (!audioContext) audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        if (audioContext.state === "suspended") audioContext.resume();
+        return audioContext;
+      }
+
+      function tone(frequency, duration = 0.08, type = "sine", gain = 0.045, delay = 0) {
+        const ctx = ensureAudio();
+        const start = ctx.currentTime + delay;
+        const osc = ctx.createOscillator();
+        const amp = ctx.createGain();
+        osc.type = type;
+        osc.frequency.setValueAtTime(frequency, start);
+        amp.gain.setValueAtTime(0.0001, start);
+        amp.gain.exponentialRampToValueAtTime(gain, start + 0.012);
+        amp.gain.exponentialRampToValueAtTime(0.0001, start + duration);
+        osc.connect(amp).connect(ctx.destination);
+        osc.start(start);
+        osc.stop(start + duration + 0.02);
+      }
+
+      function startSpinHum() {
+        const ctx = ensureAudio();
+        stopSpinHum();
+        const osc = ctx.createOscillator();
+        const amp = ctx.createGain();
+        osc.type = "sawtooth";
+        osc.frequency.setValueAtTime(92, ctx.currentTime);
+        amp.gain.setValueAtTime(0.0001, ctx.currentTime);
+        amp.gain.exponentialRampToValueAtTime(0.018, ctx.currentTime + 0.08);
+        osc.connect(amp).connect(ctx.destination);
+        osc.start();
+        spinHum = { osc, amp };
+      }
+
+      function stopSpinHum() {
+        if (!spinHum || !audioContext) return;
+        const end = audioContext.currentTime + 0.08;
+        spinHum.amp.gain.exponentialRampToValueAtTime(0.0001, end);
+        spinHum.osc.stop(end + 0.02);
+        spinHum = null;
+      }
+
+      function sound(name) {
+        if (name === "spin") startSpinHum();
+        else if (name === "stop") { stopSpinHum(); tone(180, 0.05, "square", 0.028); }
+        else if (name === "reelStop") tone(220, 0.045, "triangle", 0.032);
+        else if (name === "win") { tone(440, 0.08, "sine", 0.04); tone(660, 0.1, "sine", 0.035, 0.06); }
+        else if (name === "big") { tone(392, 0.1, "triangle", 0.045); tone(587, 0.12, "triangle", 0.045, 0.08); tone(784, 0.16, "triangle", 0.04, 0.16); }
+        else if (name === "stampede") { [330, 440, 554, 740, 988].forEach((freq, i) => tone(freq, 0.13, "triangle", 0.045, i * 0.07)); }
+        else if (name === "scatter") { tone(880, 0.07, "sine", 0.038); tone(1180, 0.09, "sine", 0.032, 0.08); }
+        else if (name === "free") { [523, 659, 784, 1046].forEach((freq, i) => tone(freq, 0.14, "sine", 0.045, i * 0.09)); }
+        else if (name === "monkey") { tone(520, 0.06, "square", 0.035); tone(380, 0.06, "square", 0.026, 0.07); }
       }
 
       function evaluate(cells) {
@@ -619,6 +717,8 @@
         nodes.lastWin.textContent = money(state.lastWin);
         nodes.totalWon.textContent = money(state.totalWon);
         nodes.freeSpins.textContent = format(state.freeSpins);
+        nodes.featureSpins.textContent = "Free spins: " + format(state.freeSpins);
+        nodes.featureWin.textContent = "Feature win: " + money(state.featureWin);
         nodes.rtp.textContent = state.totalStaked > 0 ? (state.totalWon / state.totalStaked * 100).toFixed(2) + "%" : "0.00%";
         nodes.avgRtp.textContent = targetRtp.toFixed(2) + "%";
         nodes.bet.textContent = format(bet());
@@ -696,8 +796,9 @@
         return { cells: next, from: wildIndex, to: target };
       }
 
-      function showWinOverlay(title, amount, duration = 2200) {
+      function showWinOverlay(title, amount, duration = 2200, tier = "") {
         window.clearTimeout(overlayTimer);
+        winCard.className = "win-card" + (tier ? " is-" + tier : "");
         winOverlayTitle.textContent = title;
         winOverlayAmount.textContent = amount;
         winOverlay.hidden = false;
@@ -739,12 +840,14 @@
         state.optimisationApplied = true;
         nodes.applyRecommendation.textContent = "Applied";
         nodes.applyRecommendation.disabled = true;
-        showWinOverlay("Optimisation applied", "Win pacing upgraded", 1900);
+        sound("big");
+        showWinOverlay("Optimisation applied", "Win pacing upgraded", 1900, "big");
         updateInsights();
       }
 
       async function spinReelsToResult(startCells, finalCells, isFreeSpin) {
         nodes.message.textContent = isFreeSpin ? "Free spin reels rolling..." : "Reels rolling...";
+        sound("spin");
         grid.classList.add("is-rolling");
         grid.replaceChildren();
         const strips = [];
@@ -775,19 +878,31 @@
         });
         for (let col = 0; col < 5; col += 1) {
           await sleep(col === 0 ? 980 : 355);
+          sound("reelStop");
           const lockedScatters = lockedScatterCount(finalCells, col);
           if (lockedScatters === 2 && col < 4) {
             nodes.message.textContent = "2 Ostrich Scatters landed... watching the next reels.";
             await sleep(260);
           } else if (lockedScatters === 3 && col < 4) {
             nodes.message.textContent = "3 Ostrich Scatters. One more starts free spins.";
-            showWinOverlay("Scatter chance", "One more...", 1300);
+            sound("scatter");
+            showWinOverlay("Scatter chance", "One more...", 1300, "mini");
             await sleep(520);
           }
         }
+        sound("stop");
         await sleep(180);
         render(finalCells);
         await sleep(80);
+      }
+
+      function winTier(amount) {
+        const stake = bet();
+        if (amount >= stake * 40) return { title: "Stampede Win", tier: "stampede", duration: 3600, sound: "stampede" };
+        if (amount >= stake * 20) return { title: "Mega Win", tier: "mega", duration: 3000, sound: "big" };
+        if (amount >= stake * 8) return { title: "Big Win", tier: "big", duration: 2400, sound: "big" };
+        if (amount > 0) return { title: "Mini Win", tier: "mini", duration: 1700, sound: "win" };
+        return null;
       }
 
       async function spin() {
@@ -806,7 +921,8 @@
             state.featureIntroPending = true;
           }
           if (state.featureIntroPending) {
-            showWinOverlay("Animal Stampede Free Spins", freeSpinsBefore + " spins", 2800);
+            sound("free");
+            showWinOverlay("Animal Stampede Free Spins", freeSpinsBefore + " spins", 2800, "stampede");
             nodes.message.textContent = "Free spins feature started.";
             state.featureIntroPending = false;
             await sleep(1700);
@@ -856,8 +972,10 @@
           if (monkeyStep) {
             cells = monkeyStep.cells;
             nodes.message.textContent = "Cheeky Monkey Wild stepped one reel right.";
-            render(cells, [], [monkeyStep.from], [monkeyStep.to]);
-            await sleep(320);
+            sound("monkey");
+            render(cells, [], [monkeyStep.from], [monkeyStep.to], [], [], [monkeyStep.from]);
+            showWinOverlay("Cheeky Monkey Wild", "Stepped right", 1200, "mini");
+            await sleep(620);
           }
           cascade += 1;
         }
@@ -870,7 +988,8 @@
           state.featureWin = 0;
           state.featureIntroPending = true;
           nodes.message.textContent = "4 Ostrich Scatters triggered Animal Stampede Free Spins.";
-          showWinOverlay("Feature unlocked", "8 free spins", 3200);
+          sound("free");
+          showWinOverlay("Feature unlocked", "8 free spins", 3200, "stampede");
           await sleep(2200);
         }
         const totalBeforeWin = state.totalWon;
@@ -884,7 +1003,8 @@
         if (isFreeSpin) state.featureWin += spinWin;
         if (isFreeSpin && state.featureActive && state.freeSpins === 0) {
           nodes.message.textContent = "Animal Stampede Free Spins complete: " + money(state.featureWin) + " total feature win.";
-          showWinOverlay("Feature complete", money(state.featureWin), 3200);
+          sound("stampede");
+          showWinOverlay("Feature complete", money(state.featureWin), 3200, "stampede");
           state.featureActive = false;
           state.featureIntroPending = false;
           await sleep(1500);
@@ -892,8 +1012,11 @@
           nodes.message.textContent = cascade > 1
             ? cascade + " cascades paid " + money(spinWin) + "."
             : "Payline win: " + money(spinWin) + ".";
-          if (spinWin >= bet() * 20) showWinOverlay("Mega win", money(spinWin));
-          else if (spinWin >= bet() * 8) showWinOverlay("Big win", money(spinWin));
+          const tier = winTier(spinWin);
+          if (tier) {
+            sound(tier.sound);
+            showWinOverlay(tier.title, money(spinWin), tier.duration, tier.tier);
+          }
         } else if (spinWin <= 0 && scatters < 4) {
           nodes.message.textContent = "No win this spin. Try again.";
         }
