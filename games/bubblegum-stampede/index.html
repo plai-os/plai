@@ -141,6 +141,7 @@
     }
 
     .reel-grid {
+      --reel-gap: clamp(6px, 0.9vw, 10px);
       min-height: 0;
       height: max-content;
       display: grid;
@@ -148,11 +149,35 @@
       grid-template-rows: repeat(4, var(--symbol-size));
       justify-content: center;
       align-content: start;
-      gap: clamp(6px, 0.9vw, 10px);
+      gap: var(--reel-gap);
       padding: clamp(8px, 1.2vw, 12px);
       border: 2px solid rgba(255,255,255,0.22);
       border-radius: 22px;
       background: rgba(27, 5, 58, 0.74);
+    }
+
+    .reel-grid.is-rolling {
+      grid-template-rows: calc(var(--symbol-size) * 4 + var(--reel-gap) * 3);
+      align-items: start;
+      overflow: hidden;
+    }
+
+    .reel-column {
+      width: var(--symbol-size);
+      height: calc(var(--symbol-size) * 4 + var(--reel-gap) * 3);
+      overflow: hidden;
+      border-radius: 20px;
+      background: rgba(18, 5, 42, 0.32);
+    }
+
+    .reel-strip {
+      display: grid;
+      grid-auto-rows: var(--symbol-size);
+      gap: var(--reel-gap);
+      will-change: transform;
+      transform: translateY(0);
+      transition-property: transform;
+      transition-timing-function: cubic-bezier(.12,.78,.18,1);
     }
 
     .symbol {
@@ -182,6 +207,7 @@
     .symbol.is-new { animation: symbolDrop 220ms ease-out both; }
     .symbol.is-spinning { animation: reelSpin 220ms linear infinite; animation-delay: var(--spin-delay, 0ms); }
     .symbol.is-locking { animation: reelLock 260ms cubic-bezier(.2,.84,.24,1) both; }
+    .reel-strip .symbol { box-shadow: inset 0 -7px 0 rgba(0,0,0,0.1), 0 8px 18px rgba(28, 6, 65, 0.2); }
     .symbol.is-walking { animation: monkeyStep 360ms ease-in-out both; outline: 4px solid #ff43ad; }
     @keyframes symbolDrop {
       from { opacity: 0; transform: translateY(-18px) scale(0.92); }
@@ -531,24 +557,30 @@
         return Array.from({ length: 20 }, () => pickSymbol());
       }
 
+      function makeSymbolNode(symbol, index = -1, classes = "") {
+        const cell = document.createElement("div");
+        cell.className = "symbol " + symbol.className + (classes ? " " + classes : "");
+        cell.setAttribute("aria-label", symbol.name);
+        if (classes.includes("is-spinning") && index >= 0) cell.style.setProperty("--spin-delay", Math.floor(index / 5) * 24 + "ms");
+        const image = document.createElement("img");
+        image.src = symbol.image;
+        image.alt = "";
+        image.decoding = "async";
+        image.loading = "eager";
+        cell.appendChild(image);
+        return cell;
+      }
+
       function render(cells, winning = [], fresh = [], walking = [], spinning = [], locking = []) {
+        grid.classList.remove("is-rolling");
         const wins = new Set(winning);
         const freshCells = new Set(fresh);
         const walkingCells = new Set(walking);
         const spinningCells = new Set(spinning);
         const lockingCells = new Set(locking);
         grid.replaceChildren(...cells.map((symbol, index) => {
-          const cell = document.createElement("div");
-          cell.className = "symbol " + symbol.className + (wins.has(index) ? " is-win" : "") + (freshCells.has(index) ? " is-new" : "") + (walkingCells.has(index) ? " is-walking" : "") + (spinningCells.has(index) ? " is-spinning" : "") + (lockingCells.has(index) ? " is-locking" : "");
-          cell.setAttribute("aria-label", symbol.name);
-          if (spinningCells.has(index)) cell.style.setProperty("--spin-delay", Math.floor(index / 5) * 24 + "ms");
-          const image = document.createElement("img");
-          image.src = symbol.image;
-          image.alt = "";
-          image.decoding = "async";
-          image.loading = "eager";
-          cell.appendChild(image);
-          return cell;
+          const classes = (wins.has(index) ? " is-win" : "") + (freshCells.has(index) ? " is-new" : "") + (walkingCells.has(index) ? " is-walking" : "") + (spinningCells.has(index) ? " is-spinning" : "") + (lockingCells.has(index) ? " is-locking" : "");
+          return makeSymbolNode(symbol, index, classes.trim());
         }));
       }
 
@@ -699,26 +731,36 @@
       }
 
       async function spinReelsToResult(finalCells, isFreeSpin) {
-        const displayCells = makeGrid();
-        const spinningColumns = new Set([0, 1, 2, 3, 4]);
-        const columnIndexes = (col) => [0, 1, 2, 3].map((row) => row * 5 + col);
-        const spinningIndexes = () => Array.from(spinningColumns).flatMap(columnIndexes);
         nodes.message.textContent = isFreeSpin ? "Free spin reels rolling..." : "Reels rolling...";
-        render(displayCells, [], [], [], spinningIndexes());
+        grid.classList.add("is-rolling");
+        grid.replaceChildren();
+        const strips = [];
         for (let col = 0; col < 5; col += 1) {
-          const ticks = 5 + col * 2;
-          for (let tick = 0; tick < ticks; tick += 1) {
-            for (const activeCol of spinningColumns) {
-              columnIndexes(activeCol).forEach((index) => { displayCells[index] = pickSymbol(); });
-            }
-            render(displayCells, [], [], [], spinningIndexes());
-            await sleep(Math.min(44 + tick * 7 + col * 6, 105));
-          }
-          columnIndexes(col).forEach((index) => { displayCells[index] = finalCells[index]; });
-          spinningColumns.delete(col);
-          render(displayCells, [], [], [], spinningIndexes(), columnIndexes(col));
-          await sleep(col === 4 ? 300 : 150);
+          const column = document.createElement("div");
+          column.className = "reel-column";
+          const strip = document.createElement("div");
+          strip.className = "reel-strip";
+          const fillerCount = 12 + col * 4;
+          strip.dataset.rollSteps = String(fillerCount);
+          strip.style.transitionDuration = 900 + col * 260 + "ms";
+          strip.style.transitionDelay = col * 95 + "ms";
+          const stripSymbols = Array.from({ length: fillerCount }, () => pickSymbol());
+          for (let row = 0; row < 4; row += 1) stripSymbols.push(finalCells[row * 5 + col]);
+          stripSymbols.forEach((symbol) => strip.appendChild(makeSymbolNode(symbol)));
+          column.appendChild(strip);
+          grid.appendChild(column);
+          strips.push(strip);
         }
+        await sleep(40);
+        strips.forEach((strip) => {
+          const first = strip.children[0].getBoundingClientRect();
+          const second = strip.children[1].getBoundingClientRect();
+          const stepDistance = Math.max(1, second.top - first.top);
+          strip.style.transform = "translateY(-" + Number(strip.dataset.rollSteps) * stepDistance + "px)";
+        });
+        await sleep(2320);
+        render(finalCells, [], Array.from({ length: 20 }, (_, index) => index));
+        await sleep(180);
       }
 
       async function spin() {
