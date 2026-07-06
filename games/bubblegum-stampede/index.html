@@ -295,7 +295,7 @@
     .spin-button { min-height: 64px; background: linear-gradient(135deg, var(--yellow), #ffb64d); color: var(--ink); font-size: 28px; text-transform: uppercase; }
     .spin-button:disabled, .round-btn:disabled { opacity: 0.62; cursor: wait; }
 
-    .utility-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .utility-row { display: grid; grid-template-columns: 46px 1fr 1fr; gap: 10px; }
     .utility-button {
       min-height: 42px;
       border: 1px solid rgba(255,255,255,0.2);
@@ -306,6 +306,21 @@
       font-size: 13px;
       font-weight: 900;
     }
+    .sound-toggle {
+      display: grid;
+      place-items: center;
+      padding: 0;
+    }
+    .sound-toggle svg {
+      width: 21px;
+      height: 21px;
+      stroke: currentColor;
+      stroke-width: 2.6;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      fill: none;
+    }
+    .sound-toggle[aria-pressed="false"] { color: rgba(255,255,255,0.62); }
 
     .feature-list { display: grid; gap: 10px; margin: 0; padding: 0; list-style: none; }
     .feature-list li { padding: 10px 12px; border-radius: 14px; background: var(--panel); color: rgba(255,255,255,0.86); font-size: 14px; font-weight: 750; }
@@ -455,6 +470,7 @@
         </div>
         <button class="spin-button" id="spinButton" type="button">Spin</button>
         <div class="utility-row">
+          <button class="utility-button sound-toggle" id="soundToggle" type="button" aria-label="Sound on" aria-pressed="true"></button>
           <button class="utility-button" id="paytableButton" type="button">Paytable</button>
           <button class="utility-button" id="aiBuildButton" type="button">AI Build</button>
         </div>
@@ -552,7 +568,8 @@
       const betSteps = [1, 2, 5, 10];
       const cascadeMultipliers = [1, 2, 3, 5];
       const targetRtp = 94;
-      const state = { balance: 1000, totalWon: 0, totalStaked: 0, lastWin: 0, betIndex: 1, multiplier: 1, freeSpins: 0, spinning: false, spins: 0, hitSpins: 0, lastCascadeCount: 0, featureActive: false, featureStartSpins: 0, featureWin: 0, biggestWin: 0, optimisationApplied: false, featureIntroPending: false };
+      const soundPref = (() => { try { return localStorage.getItem("animalStampedeSound"); } catch (error) { return null; } })();
+      const state = { balance: 1000, totalWon: 0, totalStaked: 0, lastWin: 0, betIndex: 1, multiplier: 1, freeSpins: 0, spinning: false, spins: 0, hitSpins: 0, lastCascadeCount: 0, featureActive: false, featureStartSpins: 0, featureWin: 0, biggestWin: 0, optimisationApplied: false, featureIntroPending: false, soundOn: soundPref !== "off" };
       let overlayTimer = 0;
       let currentCells = [];
       let audioContext = null;
@@ -562,6 +579,7 @@
       const spinButton = document.getElementById("spinButton");
       const betDown = document.getElementById("betDown");
       const betUp = document.getElementById("betUp");
+      const soundToggle = document.getElementById("soundToggle");
       const paytableButton = document.getElementById("paytableButton");
       const aiBuildButton = document.getElementById("aiBuildButton");
       const applyRecommendationButton = document.getElementById("applyRecommendationButton");
@@ -587,6 +605,7 @@
         hitRate: document.getElementById("hitRateValue"),
         aiInsight: document.getElementById("aiInsightValue"),
         applyRecommendation: applyRecommendationButton,
+        soundToggle,
         featureSpins: document.getElementById("featureSpinsValue"),
         featureWin: document.getElementById("featureWinValue")
       };
@@ -683,94 +702,41 @@
       }
 
       function startSpinHum() {
-        const ctx = ensureAudio();
         stopSpinHum();
-        const now = ctx.currentTime;
-        const master = ctx.createGain();
-        const bodyFilter = ctx.createBiquadFilter();
-        const motionFilter = ctx.createBiquadFilter();
-        const airFilter = ctx.createBiquadFilter();
-        const body = ctx.createOscillator();
-        const motion = ctx.createOscillator();
-        const sheen = ctx.createOscillator();
-        const lfo = ctx.createOscillator();
-        const lfoGain = ctx.createGain();
-        const bodyGain = ctx.createGain();
-        const motionGain = ctx.createGain();
-        const sheenGain = ctx.createGain();
-        const airGain = ctx.createGain();
-        const noise = ctx.createBufferSource();
-        const noiseBuffer = ctx.createBuffer(1, ctx.sampleRate * 2, ctx.sampleRate);
-        const noiseData = noiseBuffer.getChannelData(0);
-        for (let i = 0; i < noiseData.length; i += 1) noiseData[i] = (Math.random() * 2 - 1) * 0.42;
-
-        master.gain.setValueAtTime(0.0001, now);
-        master.gain.exponentialRampToValueAtTime(0.052, now + 0.28);
-        master.gain.linearRampToValueAtTime(0.044, now + 0.9);
-
-        body.type = "sine";
-        body.frequency.setValueAtTime(58, now);
-        body.frequency.exponentialRampToValueAtTime(76, now + 0.42);
-        bodyFilter.type = "lowpass";
-        bodyFilter.frequency.setValueAtTime(240, now);
-        bodyFilter.Q.setValueAtTime(0.9, now);
-        bodyGain.gain.setValueAtTime(0.55, now);
-
-        motion.type = "triangle";
-        motion.frequency.setValueAtTime(118, now);
-        motion.frequency.exponentialRampToValueAtTime(188, now + 0.5);
-        motionFilter.type = "bandpass";
-        motionFilter.frequency.setValueAtTime(640, now);
-        motionFilter.frequency.linearRampToValueAtTime(980, now + 0.7);
-        motionFilter.Q.setValueAtTime(1.4, now);
-        motionGain.gain.setValueAtTime(0.22, now);
-
-        sheen.type = "sine";
-        sheen.frequency.setValueAtTime(420, now);
-        sheen.frequency.exponentialRampToValueAtTime(760, now + 0.56);
-        sheenGain.gain.setValueAtTime(0.0001, now);
-        sheenGain.gain.exponentialRampToValueAtTime(0.09, now + 0.35);
-        sheenGain.gain.linearRampToValueAtTime(0.055, now + 0.95);
-
-        lfo.type = "sine";
-        lfo.frequency.setValueAtTime(8.8, now);
-        lfoGain.gain.setValueAtTime(16, now);
-        lfo.connect(lfoGain);
-        lfoGain.connect(motion.frequency);
-        lfoGain.connect(sheen.frequency);
-
-        noise.buffer = noiseBuffer;
-        noise.loop = true;
-        airFilter.type = "bandpass";
-        airFilter.frequency.setValueAtTime(1450, now);
-        airFilter.frequency.linearRampToValueAtTime(2600, now + 0.65);
-        airFilter.Q.setValueAtTime(0.65, now);
-        airGain.gain.setValueAtTime(0.0001, now);
-        airGain.gain.exponentialRampToValueAtTime(0.11, now + 0.24);
-        airGain.gain.linearRampToValueAtTime(0.075, now + 1.0);
-
-        body.connect(bodyFilter).connect(bodyGain).connect(master);
-        motion.connect(motionFilter).connect(motionGain).connect(master);
-        sheen.connect(sheenGain).connect(master);
-        noise.connect(airFilter).connect(airGain).connect(master);
-        master.connect(ctx.destination);
-        [body, motion, sheen, lfo, noise].forEach(node => node.start(now));
-        shimmer(0.04, 0.009);
-        spinHum = { nodes: [body, motion, sheen, lfo, noise], master, bodyGain, motionGain, sheenGain, airGain };
       }
 
       function stopSpinHum() {
         if (!spinHum || !audioContext) return;
-        const end = audioContext.currentTime + 0.26;
-        spinHum.master.gain.cancelScheduledValues(audioContext.currentTime);
-        spinHum.master.gain.setValueAtTime(Math.max(spinHum.master.gain.value, 0.0001), audioContext.currentTime);
+        const end = audioContext.currentTime + 0.08;
         spinHum.master.gain.exponentialRampToValueAtTime(0.0001, end);
-        spinHum.nodes.forEach(node => node.stop(end + 0.04));
+        spinHum.nodes.forEach(node => node.stop(end + 0.02));
         spinHum = null;
       }
 
+      function soundIcon(on) {
+        return on
+          ? '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9H4z"></path><path d="M16 8.5c1.2 1 1.8 2.1 1.8 3.5s-.6 2.5-1.8 3.5"></path><path d="M18.8 6c1.8 1.6 2.7 3.6 2.7 6s-.9 4.4-2.7 6"></path></svg>'
+          : '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9H4z"></path><path d="M18 9l4 4"></path><path d="M22 9l-4 4"></path></svg>';
+      }
+
+      function updateSoundToggle() {
+        nodes.soundToggle.innerHTML = soundIcon(state.soundOn);
+        nodes.soundToggle.setAttribute("aria-pressed", state.soundOn ? "true" : "false");
+        nodes.soundToggle.setAttribute("aria-label", state.soundOn ? "Sound on" : "Sound off");
+        nodes.soundToggle.title = state.soundOn ? "Sound on" : "Sound off";
+      }
+
+      function toggleSound() {
+        state.soundOn = !state.soundOn;
+        if (!state.soundOn) stopSpinHum();
+        try { localStorage.setItem("animalStampedeSound", state.soundOn ? "on" : "off"); } catch (error) {}
+        updateSoundToggle();
+        if (state.soundOn) sound("win");
+      }
+
       function sound(name) {
-        if (name === "spin") startSpinHum();
+        if (!state.soundOn) { stopSpinHum(); return; }
+        if (name === "spin") stopSpinHum();
         else if (name === "stop") { stopSpinHum(); tone(164, 0.12, "sine", 0.012); shimmer(0.02, 0.007); }
         else if (name === "reelStop") { tone(246, 0.075, "sine", 0.010); shimmer(0, 0.005); }
         else if (name === "win") { chord([523, 659, 784], 0.26, "sine", 0.014); shimmer(0.04, 0.014); tone(1046, 0.28, "sine", 0.010, 0.08); }
@@ -1144,6 +1110,7 @@
 
       currentCells = makeGrid();
       render(currentCells);
+      updateSoundToggle();
       updateStats();
       spinButton.addEventListener("click", spin);
       betDown.addEventListener("click", () => changeBet(-1));
