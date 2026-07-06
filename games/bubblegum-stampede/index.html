@@ -107,6 +107,7 @@
     }
 
     .reel-panel {
+      position: relative;
       min-height: 0;
       overflow: hidden;
       padding: clamp(10px, 1.5vw, 18px);
@@ -301,15 +302,16 @@
 
     .win-overlay[hidden] { display: none; }
     .win-overlay {
-      position: fixed;
+      position: absolute;
       inset: 0;
       z-index: 18;
       display: grid;
       place-items: center;
       pointer-events: none;
+      padding: 16px;
     }
     .win-card {
-      min-width: min(440px, 82vw);
+      min-width: min(440px, 78%);
       padding: 22px 26px;
       border: 2px solid rgba(255, 233, 91, 0.82);
       border-radius: 22px;
@@ -399,6 +401,12 @@
           <span class="multiplier" id="cascadeMeter">x1</span>
         </div>
         <div class="reel-grid" id="reelGrid" aria-label="Five reels with four rows"></div>
+        <div class="win-overlay" id="winOverlay" hidden>
+          <div class="win-card">
+            <span id="winOverlayTitle">Big win</span>
+            <strong id="winOverlayAmount">£0.00</strong>
+          </div>
+        </div>
       </section>
 
       <aside class="control-panel" aria-label="Game controls">
@@ -430,13 +438,6 @@
       </aside>
     </section>
   </main>
-
-  <div class="win-overlay" id="winOverlay" hidden>
-    <div class="win-card">
-      <span id="winOverlayTitle">Big win</span>
-      <strong id="winOverlayAmount">£0.00</strong>
-    </div>
-  </div>
 
   <div class="info-modal" id="infoModal" hidden>
     <section class="info-dialog" role="dialog" aria-modal="true" aria-labelledby="infoTitle">
@@ -514,7 +515,7 @@
       const betSteps = [1, 2, 5, 10];
       const cascadeMultipliers = [1, 2, 3, 5];
       const targetRtp = 94;
-      const state = { balance: 1000, totalWon: 0, totalStaked: 0, lastWin: 0, betIndex: 1, multiplier: 1, freeSpins: 0, spinning: false, spins: 0, hitSpins: 0, lastCascadeCount: 0, featureActive: false, featureStartSpins: 0, featureWin: 0, biggestWin: 0, optimisationApplied: false };
+      const state = { balance: 1000, totalWon: 0, totalStaked: 0, lastWin: 0, betIndex: 1, multiplier: 1, freeSpins: 0, spinning: false, spins: 0, hitSpins: 0, lastCascadeCount: 0, featureActive: false, featureStartSpins: 0, featureWin: 0, biggestWin: 0, optimisationApplied: false, featureIntroPending: false };
       let overlayTimer = 0;
       let currentCells = [];
       const shell = document.querySelector(".game-shell");
@@ -675,6 +676,16 @@
         return cells.filter((symbol) => symbol.scatter).length;
       }
 
+      function lockedScatterCount(cells, throughColumn) {
+        let count = 0;
+        for (let col = 0; col <= throughColumn; col += 1) {
+          for (let row = 0; row < 4; row += 1) {
+            if (cells[row * 5 + col].scatter) count += 1;
+          }
+        }
+        return count;
+      }
+
       function walkMonkeyWild(cells) {
         const wildIndex = cells.findIndex((symbol, index) => symbol.wild && index % 5 < 4);
         if (wildIndex < 0) return null;
@@ -762,7 +773,19 @@
           const stepDistance = Math.max(1, second.top - first.top);
           strip.style.transform = "translateY(-" + Number(strip.dataset.rollSteps) * stepDistance + "px)";
         });
-        await sleep(2320);
+        for (let col = 0; col < 5; col += 1) {
+          await sleep(col === 0 ? 980 : 355);
+          const lockedScatters = lockedScatterCount(finalCells, col);
+          if (lockedScatters === 2 && col < 4) {
+            nodes.message.textContent = "2 Ostrich Scatters landed... watching the next reels.";
+            await sleep(260);
+          } else if (lockedScatters === 3 && col < 4) {
+            nodes.message.textContent = "3 Ostrich Scatters. One more starts free spins.";
+            showWinOverlay("Scatter chance", "One more...", 1300);
+            await sleep(520);
+          }
+        }
+        await sleep(180);
         render(finalCells);
         await sleep(80);
       }
@@ -780,8 +803,13 @@
             state.featureActive = true;
             state.featureStartSpins = freeSpinsBefore;
             state.featureWin = 0;
-            showWinOverlay("Free spins", freeSpinsBefore + " remaining", 1800);
-            await sleep(650);
+            state.featureIntroPending = true;
+          }
+          if (state.featureIntroPending) {
+            showWinOverlay("Animal Stampede Free Spins", freeSpinsBefore + " spins", 2800);
+            nodes.message.textContent = "Free spins feature started.";
+            state.featureIntroPending = false;
+            await sleep(1700);
           }
           state.freeSpins -= 1;
         }
@@ -840,9 +868,10 @@
           state.featureActive = true;
           state.featureStartSpins = state.freeSpins;
           state.featureWin = 0;
-          nodes.message.textContent = "4 Ostrich Scatters triggered 8 free spins.";
-          showWinOverlay("Free spins", "8 awarded", 2600);
-          await sleep(1700);
+          state.featureIntroPending = true;
+          nodes.message.textContent = "4 Ostrich Scatters triggered Animal Stampede Free Spins.";
+          showWinOverlay("Feature unlocked", "8 free spins", 3200);
+          await sleep(2200);
         }
         const totalBeforeWin = state.totalWon;
         const balanceBeforeWin = state.balance;
@@ -854,10 +883,11 @@
         state.biggestWin = Math.max(state.biggestWin, spinWin);
         if (isFreeSpin) state.featureWin += spinWin;
         if (isFreeSpin && state.featureActive && state.freeSpins === 0) {
-          nodes.message.textContent = "Free spins complete: " + money(state.featureWin) + " total feature win.";
-          showWinOverlay("Feature complete", money(state.featureWin), 2800);
+          nodes.message.textContent = "Animal Stampede Free Spins complete: " + money(state.featureWin) + " total feature win.";
+          showWinOverlay("Feature complete", money(state.featureWin), 3200);
           state.featureActive = false;
-          await sleep(900);
+          state.featureIntroPending = false;
+          await sleep(1500);
         } else if (spinWin > 0 && scatters < 4) {
           nodes.message.textContent = cascade > 1
             ? cascade + " cascades paid " + money(spinWin) + "."
@@ -890,7 +920,7 @@
       }
 
       function aiBuildMarkup() {
-        return '<div class="info-grid"><div class="info-card"><span>Phase</span><strong>AAA demo sprint</strong></div><div class="info-card"><span>Features</span><strong>Cascades + free spins</strong></div><div class="info-card"><span>Wild feature</span><strong>Cheeky monkey step</strong></div><div class="info-card"><span>Assets</span><strong>Animal symbol set</strong></div><div class="info-card"><span>RTP target</span><strong>94%</strong></div><div class="info-card"><span>Volatility</span><strong>Medium</strong></div></div><p class="info-copy">Plai AI recommendation: current maths is close enough for demo review. Next tune reel strips with larger simulations, continue tuning line-by-line win count-up and wire applied recommendations back into the creator workflow.</p>';
+        return '<div class="info-grid"><div class="info-card"><span>Phase</span><strong>AAA demo sprint</strong></div><div class="info-card"><span>Features</span><strong>Cascades + free spins</strong></div><div class="info-card"><span>Wild feature</span><strong>Cheeky monkey step</strong></div><div class="info-card"><span>Assets</span><strong>Animal symbol set</strong></div><div class="info-card"><span>RTP target</span><strong>94%</strong></div><div class="info-card"><span>Volatility</span><strong>Medium</strong></div></div><p class="info-copy">Plai AI recommendation: current maths is close enough for demo review. Next tune reel strips with larger simulations, refine scatter anticipation timing and wire applied recommendations back into the creator workflow.</p>';
       }
 
       currentCells = makeGrid();
