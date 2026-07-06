@@ -3769,7 +3769,22 @@ function closeBubblegumStampedeModal() {
   document.body.classList.remove("plai-bubblegum-game-open");
 }
 
-function openBubblegumStampedeModal() {
+const PROTOTYPE_GAME_RELEASE = "20260706-rocket-ranger";
+const PROTOTYPE_GAME_CONFIG = {
+  animal: {
+    title: "Animal Stampede",
+    pill: "Exclusive",
+    path: "games/bubblegum-stampede/index.html"
+  },
+  rocket: {
+    title: "Rocket Ranger",
+    pill: "New",
+    path: "games/rocket-ranger/index.html"
+  }
+};
+
+function openPrototypeGameModal(gameKey = "animal") {
+  const config = PROTOTYPE_GAME_CONFIG[gameKey] || PROTOTYPE_GAME_CONFIG.animal;
   const styleId = "plai-bubblegum-game-style";
   if (!document.getElementById(styleId)) {
     const style = document.createElement("style");
@@ -3788,22 +3803,21 @@ function openBubblegumStampedeModal() {
   }
 
   let modal = document.getElementById("plai-bubblegum-game-modal");
+  const gameUrl = new URL(config.path + "?v=" + PROTOTYPE_GAME_RELEASE, window.location.href).toString();
   if (!modal) {
     modal = document.createElement("div");
     modal.id = "plai-bubblegum-game-modal";
     modal.className = "plai-bubblegum-game-modal";
     modal.setAttribute("role", "dialog");
     modal.setAttribute("aria-modal", "true");
-    modal.setAttribute("aria-label", "Animal Stampede");
-    const gameUrl = new URL("games/bubblegum-stampede/index.html?v=20260706-overlay-queue-confetti", window.location.href).toString();
     modal.innerHTML = [
       '<div class="plai-bubblegum-game-shell" role="document">',
       '<div class="plai-bubblegum-game-bar">',
-      '<span class="plai-bubblegum-game-pill">Exclusive</span>',
-      '<strong class="plai-bubblegum-game-title">Animal Stampede</strong>',
-      '<button class="plai-bubblegum-game-close" type="button" aria-label="Close Animal Stampede">&times;</button>',
+      '<span class="plai-bubblegum-game-pill" data-game-pill></span>',
+      '<strong class="plai-bubblegum-game-title" data-game-title></strong>',
+      '<button class="plai-bubblegum-game-close" type="button" data-game-close>&times;</button>',
       '</div>',
-      '<iframe class="plai-bubblegum-game-frame" title="Animal Stampede" src="' + gameUrl + '" loading="eager" allow="autoplay; fullscreen"></iframe>',
+      '<iframe class="plai-bubblegum-game-frame" data-game-frame loading="eager" allow="autoplay; fullscreen"></iframe>',
       '</div>'
     ].join("");
     document.body.appendChild(modal);
@@ -3813,8 +3827,26 @@ function openBubblegumStampedeModal() {
       }
     });
   }
+  modal.setAttribute("aria-label", config.title);
+  modal.querySelector("[data-game-pill]").textContent = config.pill;
+  modal.querySelector("[data-game-title]").textContent = config.title;
+  modal.querySelector("[data-game-close]").setAttribute("aria-label", "Close " + config.title);
+  const frame = modal.querySelector("[data-game-frame]");
+  frame.title = config.title;
+  frame.src = gameUrl;
   document.body.classList.add("plai-bubblegum-game-open");
-  window.requestAnimationFrame(() => modal.querySelector("iframe")?.focus?.());
+  window.requestAnimationFrame(() => frame?.focus?.());
+}
+
+function openBubblegumStampedeModal() {
+  openPrototypeGameModal("animal");
+}
+
+function choosePrototypeGame(game, gameCard) {
+  const name = (game?.name || "").toLowerCase();
+  if (/rocket|space|star|moon|alien|cosmic/.test(name)) return "rocket";
+  const position = Number(gameCard?.dataset.position || 0);
+  return position % 2 === 0 ? "animal" : "rocket";
 }
 
 function handleGameNavigation(event) {
@@ -3842,7 +3874,7 @@ function handleGameNavigation(event) {
     `game-${gameCard?.dataset.gameId || "unknown"}`,
     properties
   );
-  openBubblegumStampedeModal();
+  openPrototypeGameModal(choosePrototypeGame(game, gameCard));
 }
 
 function handleGameCardKeydown(event) {

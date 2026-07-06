@@ -1,0 +1,1445 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Rocket Ranger</title>
+  <style>
+    :root {
+      --ink: #160936;
+      --deep: #080821;
+      --pink: #ff4ee3;
+      --yellow: #f8e96a;
+      --mint: #56f7ff;
+      --panel: rgba(255, 255, 255, 0.15);
+      --line: rgba(255, 255, 255, 0.24);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+
+    html,
+    body {
+      width: 100%;
+      height: 100%;
+      min-height: 0;
+    }
+
+    body {
+      margin: 0;
+      color: white;
+      background:
+        radial-gradient(circle at 12% 12%, rgba(86, 247, 255, 0.22), transparent 18%),
+        radial-gradient(circle at 86% 18%, rgba(255, 78, 227, 0.22), transparent 20%),
+        linear-gradient(180deg, rgba(27, 5, 58, 0.5), rgba(27, 5, 58, 0.82)),
+        url("assets/rocket-ranger-bg.jpg") center / cover no-repeat,
+        linear-gradient(135deg, #070b2b 0%, #2a1277 52%, #ff57d8 100%);
+      overflow: hidden;
+    }
+
+    button { font: inherit; }
+
+    .game-shell {
+      --symbol-size: clamp(76px, min(calc((100vw - 476px) / 5), calc((100vh - 344px) / 4)), 176px);
+      position: relative;
+      height: 100vh;
+      min-height: 0;
+      padding: clamp(10px, 1.8vw, 22px);
+      display: grid;
+      grid-template-rows: auto minmax(0, 1fr);
+      gap: 12px;
+      overflow: hidden;
+    }
+
+    .game-shell.is-free-mode .meter-header,
+    .game-shell.is-free-mode .reel-panel,
+    .game-shell.is-free-mode .control-panel {
+      border-color: rgba(255, 233, 91, 0.58);
+      box-shadow: 0 0 44px rgba(86, 247, 255, 0.26), 0 20px 60px rgba(35, 7, 76, 0.26);
+    }
+    .game-shell.is-free-mode {
+      background:
+        radial-gradient(circle at 14% 14%, rgba(86, 247, 255, 0.17), transparent 18%),
+        radial-gradient(circle at 86% 18%, rgba(96, 234, 219, 0.16), transparent 20%);
+    }
+
+    .meter-header,
+    .reel-panel,
+    .control-panel {
+      border: 1px solid rgba(86, 247, 255, 0.26);
+      border-radius: 22px;
+      background: linear-gradient(135deg, rgba(41, 13, 82, 0.76), rgba(79, 28, 121, 0.58));
+      box-shadow: 0 22px 64px rgba(8, 3, 24, 0.42), inset 0 1px 0 rgba(255,255,255,0.16);
+      backdrop-filter: blur(8px);
+    }
+
+    .meter-header {
+      padding: 10px;
+      background: linear-gradient(135deg, rgba(28, 9, 63, 0.72), rgba(103, 40, 145, 0.52));
+    }
+
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(6, minmax(94px, 1fr));
+      gap: 10px;
+      width: min(1080px, 84vw);
+    }
+
+    .stat {
+      min-height: 62px;
+      padding: 10px;
+      border-radius: 16px;
+      background: var(--panel);
+    }
+
+    .stat span {
+      display: block;
+      color: rgba(255,255,255,0.72);
+      font-size: 12px;
+      font-weight: 850;
+      text-transform: uppercase;
+    }
+
+    .stat strong {
+      display: block;
+      margin-top: 4px;
+      font-size: clamp(22px, 2.1vw, 28px);
+      line-height: 1;
+    }
+
+    .game-board {
+      min-height: 0;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(260px, 320px);
+      align-items: start;
+      gap: 12px;
+      overflow: hidden;
+    }
+
+    .reel-panel {
+      position: relative;
+      min-height: 0;
+      overflow: hidden;
+      padding: clamp(10px, 1.5vw, 18px);
+      display: grid;
+      grid-template-rows: auto minmax(0, 1fr);
+      align-content: start;
+      gap: 12px;
+      border-color: rgba(86, 247, 255, 0.44);
+      background:
+        linear-gradient(135deg, rgba(50, 17, 90, 0.82), rgba(109, 50, 149, 0.62)),
+        radial-gradient(circle at 50% 0%, rgba(255, 233, 91, 0.16), transparent 34%);
+    }
+
+    .reel-panel::before {
+      content: "";
+      position: absolute;
+      inset: 8px;
+      border-radius: 18px;
+      border: 1px solid rgba(86, 247, 255, 0.17);
+      pointer-events: none;
+    }
+
+    .message-strip {
+      min-height: 48px;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 16px;
+      border-radius: 16px;
+      background: var(--panel);
+      font-size: clamp(16px, 1.8vw, 24px);
+      font-weight: 950;
+    }
+
+    .feature-meter {
+      display: none;
+      grid-column: 1 / -1;
+      grid-template-columns: minmax(0, 1.35fr) minmax(120px, 0.65fr);
+      gap: 8px;
+      margin-top: 2px;
+    }
+    .feature-pill,
+    .feature-progress {
+      min-height: 34px;
+      padding: 8px 10px;
+      border-radius: 999px;
+      background: rgba(86, 247, 255, 0.17);
+      color: rgba(255,255,255,0.9);
+      font-size: 12px;
+      font-weight: 900;
+      text-transform: uppercase;
+      text-align: center;
+    }
+    .feature-progress {
+      position: relative;
+      overflow: hidden;
+      display: grid;
+      place-items: center;
+      border: 1px solid rgba(255,255,255,0.18);
+      background: rgba(18, 5, 42, 0.38);
+      box-shadow: inset 0 0 18px rgba(0,0,0,0.22);
+    }
+    .feature-progress-fill {
+      position: absolute;
+      inset: 0 auto 0 0;
+      width: var(--free-progress, 0%);
+      border-radius: inherit;
+      background: linear-gradient(90deg, #ffe95b, #ff43ad 58%, #60eadb);
+      box-shadow: 0 0 24px rgba(86,247,255,0.34);
+      transition: width 420ms cubic-bezier(.2,.84,.24,1);
+    }
+    .feature-progress strong {
+      position: relative;
+      z-index: 1;
+      color: #fff;
+      text-shadow: 0 2px 8px rgba(18,5,42,0.58);
+      letter-spacing: 0;
+    }
+    .game-shell.is-free-mode .feature-meter { display: grid; }
+
+    .multiplier {
+      min-width: 86px;
+      padding: 8px 10px;
+      border-radius: 999px;
+      background: var(--yellow);
+      color: var(--ink);
+      text-align: center;
+      font-size: 15px;
+      font-weight: 950;
+    }
+
+    .reel-grid {
+      --reel-gap: clamp(6px, 0.9vw, 10px);
+      min-height: 0;
+      height: max-content;
+      display: grid;
+      grid-template-columns: repeat(5, var(--symbol-size));
+      grid-template-rows: repeat(4, var(--symbol-size));
+      justify-content: center;
+      align-content: start;
+      gap: var(--reel-gap);
+      padding: clamp(8px, 1.2vw, 12px);
+      border: 3px solid rgba(255, 205, 75, 0.78);
+      border-radius: 22px;
+      background:
+        linear-gradient(180deg, rgba(18, 5, 42, 0.42), rgba(18, 5, 42, 0.72)),
+        radial-gradient(circle at 50% 48%, rgba(255, 67, 173, 0.18), transparent 42%),
+        url("assets/rocket-ranger-bg.jpg") center / cover no-repeat,
+        #1b053a;
+      box-shadow:
+        0 18px 42px rgba(5, 2, 18, 0.48),
+        inset 0 0 0 4px rgba(79, 30, 120, 0.62),
+        inset 0 0 42px rgba(0,0,0,0.42);
+    }
+
+    .reel-grid.is-rolling {
+      grid-template-rows: calc(var(--symbol-size) * 4 + var(--reel-gap) * 3);
+      align-items: start;
+      overflow: hidden;
+    }
+
+    .reel-column {
+      width: var(--symbol-size);
+      height: calc(var(--symbol-size) * 4 + var(--reel-gap) * 3);
+      overflow: hidden;
+      border-radius: 20px;
+      background: rgba(18, 5, 42, 0.42);
+      box-shadow: inset 0 0 18px rgba(0,0,0,0.28);
+    }
+
+    .reel-strip {
+      display: grid;
+      grid-auto-rows: var(--symbol-size);
+      gap: var(--reel-gap);
+      will-change: transform;
+      transform: translateY(0);
+      transition-property: transform;
+      transition-timing-function: cubic-bezier(.12,.78,.18,1);
+    }
+
+    .symbol {
+      position: relative;
+      isolation: isolate;
+      display: grid;
+      place-items: center;
+      min-width: 0;
+      min-height: 0;
+      border-radius: 18px;
+      overflow: hidden;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at 50% 45%, rgba(255,255,255,0.14), transparent 42%),
+        linear-gradient(135deg, #3a0c77, #8e3bd0 58%, #f08bd6);
+      box-shadow:
+        inset 0 -9px 0 rgba(0,0,0,0.12),
+        inset 0 1px 0 rgba(255,255,255,0.42),
+        0 10px 22px rgba(28, 6, 65, 0.24);
+      aspect-ratio: 1 / 1;
+      user-select: none;
+    }
+
+    .symbol::before,
+    .symbol::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      border-radius: inherit;
+      pointer-events: none;
+      z-index: 2;
+    }
+
+    .symbol::before {
+      border: 1px solid rgba(255,255,255,0.38);
+      background:
+        linear-gradient(135deg, rgba(255,255,255,0.42), transparent 20%, transparent 72%, rgba(255,255,255,0.18)),
+        radial-gradient(circle at 18% 12%, rgba(255,255,255,0.42), transparent 24%);
+      box-shadow:
+        inset 0 0 0 2px rgba(255,255,255,0.08),
+        inset 0 0 18px rgba(255,255,255,0.12),
+        inset 0 -18px 24px rgba(18,5,42,0.22);
+      mix-blend-mode: screen;
+    }
+
+    .symbol::after {
+      inset: 5px;
+      border-top: 2px solid rgba(255,255,255,0.5);
+      border-left: 1px solid rgba(255,255,255,0.28);
+      opacity: 0.72;
+      filter: blur(0.1px);
+    }
+
+    .symbol img {
+      position: relative;
+      z-index: 1;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    .symbol.is-win { outline: 4px solid var(--yellow); transform: scale(1.04); }
+    .symbol.is-new { animation: symbolDrop 220ms ease-out both; }
+    .symbol.is-spinning { animation: reelSpin 220ms linear infinite; animation-delay: var(--spin-delay, 0ms); }
+    .symbol.is-locking { animation: reelLock 260ms cubic-bezier(.2,.84,.24,1) both; }
+    .reel-strip .symbol { box-shadow: inset 0 -7px 0 rgba(0,0,0,0.1), 0 8px 18px rgba(28, 6, 65, 0.2); }
+    .symbol.is-walking { animation: rocketBoost 520ms ease-in-out both; outline: 4px solid #ff43ad; box-shadow: 0 0 28px rgba(255,67,173,0.48), inset 0 -9px 0 rgba(0,0,0,0.1); }
+    .symbol.is-spaceman-trail { outline: 3px dashed rgba(255,233,91,0.86); box-shadow: 0 0 26px rgba(255,233,91,0.32), inset 0 -9px 0 rgba(0,0,0,0.1); }
+    @keyframes symbolDrop {
+      from { opacity: 0; transform: translateY(-18px) scale(0.92); }
+      to { opacity: 1; transform: translateY(0) scale(1); }
+    }
+    @keyframes rocketBoost {
+      0% { transform: translateX(-28px) rotate(-5deg) scale(0.92); }
+      45% { transform: translateX(10px) rotate(5deg) scale(1.1); }
+      70% { transform: translateX(-3px) rotate(-2deg) scale(1.04); }
+      100% { transform: translateX(0) rotate(0) scale(1); }
+    }
+    @keyframes reelSpin {
+      0% { opacity: 0.58; transform: translateY(-18px) scale(0.96); filter: blur(7px) saturate(1.35); }
+      50% { opacity: 0.9; transform: translateY(10px) scale(1.01); filter: blur(4px) saturate(1.18); }
+      100% { opacity: 0.58; transform: translateY(26px) scale(0.96); filter: blur(8px) saturate(1.35); }
+    }
+    @keyframes reelLock {
+      0% { opacity: 0.72; transform: translateY(-22px) scale(0.96); filter: blur(5px) saturate(1.24); }
+      72% { opacity: 1; transform: translateY(4px) scale(1.03); filter: blur(0) saturate(1.08); }
+      100% { opacity: 1; transform: translateY(0) scale(1); filter: blur(0) saturate(1); }
+    }
+    .gum { background: linear-gradient(135deg, #ff91d4, #ff43ad); }
+    .pop { background: linear-gradient(135deg, #b47bff, #661bb4); color: #fff; }
+    .coin { background: linear-gradient(135deg, #ffe95b, #ffb34e); }
+    .mint { background: linear-gradient(135deg, #60eadb, #42bfff); }
+    .wild { background: linear-gradient(135deg, #fff8a8, #ffe95b); }
+
+    .control-panel {
+      min-height: 0;
+      overflow: hidden;
+      padding: 16px;
+      display: grid;
+      align-content: start;
+      gap: 12px;
+    }
+
+    .control-panel h2 { margin: 0; font-size: clamp(20px, 1.8vw, 24px); }
+
+    .bet-row {
+      display: grid;
+      grid-template-columns: 52px 1fr 52px;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .round-btn,
+    .spin-button {
+      border: 0;
+      border-radius: 16px;
+      cursor: pointer;
+      font-weight: 950;
+      box-shadow: 0 12px 24px rgba(43, 10, 101, 0.24);
+    }
+
+    .round-btn { min-height: 52px; background: rgba(255,255,255,0.92); color: var(--ink); font-size: 24px; }
+    .bet-value { min-height: 52px; display: grid; place-items: center; border-radius: 16px; background: var(--panel); font-size: 24px; font-weight: 950; }
+    .spin-button { min-height: 64px; background: linear-gradient(135deg, var(--yellow), #ff7ae8); color: var(--ink); font-size: 28px; text-transform: uppercase; }
+    .spin-button:disabled, .round-btn:disabled { opacity: 0.62; cursor: wait; }
+
+    .utility-row { display: grid; grid-template-columns: 46px 1fr 1fr; gap: 10px; }
+    .utility-button {
+      min-height: 42px;
+      border: 1px solid rgba(255,255,255,0.2);
+      border-radius: 14px;
+      background: rgba(255,255,255,0.14);
+      color: #fff;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 900;
+    }
+    .sound-toggle {
+      display: grid;
+      place-items: center;
+      padding: 0;
+    }
+    .sound-toggle svg {
+      width: 21px;
+      height: 21px;
+      stroke: currentColor;
+      stroke-width: 2.6;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      fill: none;
+    }
+    .sound-toggle[aria-pressed="false"] { color: rgba(255,255,255,0.62); }
+
+    .feature-list { display: grid; gap: 10px; margin: 0; padding: 0; list-style: none; }
+    .feature-list li { padding: 10px 12px; border-radius: 14px; background: var(--panel); color: rgba(255,255,255,0.86); font-size: 14px; font-weight: 750; }
+
+    .ai-panel {
+      display: grid;
+      gap: 10px;
+      margin-top: 2px;
+      padding: 12px;
+      border: 1px solid rgba(255,255,255,0.2);
+      border-radius: 16px;
+      background: rgba(18, 5, 42, 0.42);
+    }
+    .ai-panel h3 { margin: 0; font-size: 15px; font-weight: 950; }
+    .ai-panel p { margin: 0; color: rgba(255,255,255,0.84); font-size: 13px; line-height: 1.35; font-weight: 720; }
+    .ai-metrics { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .ai-metric { padding: 8px; border-radius: 12px; background: rgba(255,255,255,0.12); }
+    .ai-metric span { display: block; color: rgba(255,255,255,0.62); font-size: 10px; font-weight: 850; text-transform: uppercase; }
+    .ai-metric strong { display: block; margin-top: 3px; font-size: 16px; }
+    .ai-apply { min-height: 38px; border: 0; border-radius: 12px; background: linear-gradient(135deg, var(--yellow), #ff7ae8); color: var(--ink); cursor: pointer; font-size: 13px; font-weight: 950; }
+    .ai-apply:disabled { cursor: default; opacity: 0.78; background: rgba(255,255,255,0.18); color: #fff; }
+
+    .screen-confetti[hidden] { display: none; }
+    .screen-confetti {
+      position: absolute;
+      inset: 0;
+      z-index: 17;
+      pointer-events: none;
+      overflow: hidden;
+    }
+    .screen-confetti::before,
+    .screen-confetti::after {
+      content: "";
+      position: absolute;
+      inset: -18% -8% auto -8%;
+      height: 120%;
+      opacity: 0;
+      background:
+        radial-gradient(circle at 8% 8%, #ffe95b 0 4px, transparent 5px),
+        radial-gradient(circle at 20% 18%, #ff43ad 0 5px, transparent 6px),
+        radial-gradient(circle at 34% 10%, #60eadb 0 4px, transparent 5px),
+        radial-gradient(circle at 48% 20%, #fff 0 3px, transparent 4px),
+        radial-gradient(circle at 62% 8%, #ff7ae8 0 5px, transparent 6px),
+        radial-gradient(circle at 78% 18%, #ffe95b 0 4px, transparent 5px),
+        radial-gradient(circle at 92% 10%, #ff43ad 0 5px, transparent 6px);
+      background-size: 170px 150px, 210px 180px, 190px 160px, 150px 130px, 220px 190px, 180px 160px, 200px 170px;
+      animation: screenConfettiFall 3200ms ease-out both;
+    }
+    .screen-confetti::after {
+      inset: auto -12% -16% -12%;
+      height: 82%;
+      background:
+        conic-gradient(from 90deg at 50% 50%, transparent, rgba(255,233,91,0.72), rgba(255,67,173,0.62), rgba(96,234,219,0.58), transparent 42%);
+      mix-blend-mode: screen;
+      animation: screenConfettiBurst 2600ms ease-out both;
+    }
+    .screen-confetti.is-active::before,
+    .screen-confetti.is-active::after { opacity: 1; }
+    @keyframes screenConfettiFall {
+      0% { opacity: 0; transform: translateY(-12%) scale(0.82) rotate(0deg); }
+      14% { opacity: 1; }
+      100% { opacity: 0; transform: translateY(62%) scale(1.08) rotate(16deg); }
+    }
+    @keyframes screenConfettiBurst {
+      0% { opacity: 0; transform: scale(0.35) rotate(0deg); }
+      18% { opacity: 0.9; }
+      100% { opacity: 0; transform: scale(1.7) rotate(120deg); }
+    }
+
+    .win-overlay[hidden] { display: none; }
+    .win-overlay {
+      position: absolute;
+      inset: 0;
+      z-index: 18;
+      display: grid;
+      place-items: center;
+      pointer-events: none;
+      padding: 16px;
+    }
+    .win-card {
+      position: relative;
+      min-width: min(520px, 82%);
+      overflow: hidden;
+      display: grid;
+      grid-template-columns: auto minmax(0, 1fr);
+      align-items: center;
+      gap: 18px;
+      padding: 18px 24px;
+      border: 2px solid rgba(255, 233, 91, 0.82);
+      border-radius: 24px;
+      background:
+        linear-gradient(135deg, rgba(18, 5, 42, 0.45), rgba(58,12,119,0.82)),
+        url("assets/rocket-ranger-bg.jpg") center / cover no-repeat,
+        linear-gradient(135deg, rgba(255,67,173,0.94), rgba(58,12,119,0.96));
+      color: #fff;
+      text-align: left;
+      box-shadow: 0 30px 90px rgba(18, 5, 42, 0.62), 0 0 44px rgba(255, 233, 91, 0.3);
+      animation: winPop 1500ms ease both;
+    }
+    .win-card::before,
+    .win-card::after {
+      content: "";
+      position: absolute;
+      inset: -20%;
+      pointer-events: none;
+      opacity: 0;
+    }
+    .win-card::before {
+      background:
+        radial-gradient(circle at 18% 22%, rgba(255,233,91,0.42) 0 3px, transparent 4px),
+        radial-gradient(circle at 78% 28%, rgba(255,67,173,0.42) 0 3px, transparent 4px),
+        radial-gradient(circle at 62% 72%, rgba(96,234,219,0.38) 0 3px, transparent 4px),
+        radial-gradient(circle at 30% 78%, rgba(255,255,255,0.42) 0 2px, transparent 3px);
+      background-size: 92px 84px, 128px 116px, 112px 94px, 74px 68px;
+      animation: confettiRain 1700ms ease-out both;
+    }
+    .win-card::after {
+      background: conic-gradient(from 90deg, transparent, rgba(255,233,91,0.38), rgba(255,67,173,0.34), transparent 38%);
+      mix-blend-mode: screen;
+      animation: burstSpin 1600ms ease-out both;
+    }
+    .win-card.has-confetti::before,
+    .win-card.has-confetti::after { opacity: 1; }
+    .win-symbol {
+      position: relative;
+      z-index: 1;
+      width: clamp(92px, 14vw, 142px);
+      aspect-ratio: 1 / 1;
+      border-radius: 22px;
+      object-fit: cover;
+      border: 2px solid rgba(255,255,255,0.52);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.42), 0 18px 42px rgba(18,5,42,0.52), 0 0 32px rgba(255,233,91,0.26);
+    }
+    .win-copy { position: relative; z-index: 1; min-width: 0; }
+    .win-card span { display: block; color: var(--yellow); font-size: 14px; font-weight: 950; text-transform: uppercase; }
+    .win-card strong { display: block; margin-top: 8px; font-size: clamp(34px, 5vw, 62px); line-height: 1; }
+    .win-card.is-mini { border-color: rgba(96,234,219,0.82); box-shadow: 0 24px 70px rgba(18,5,42,0.54), 0 0 34px rgba(96,234,219,0.24); }
+    .win-card.is-big { border-color: rgba(255,233,91,0.9); }
+    .win-card.is-mega { border-color: rgba(255,67,173,0.9); box-shadow: 0 30px 100px rgba(18,5,42,0.64), 0 0 54px rgba(255,67,173,0.38); }
+    .win-card.is-stampede { border-color: #fff; background: linear-gradient(135deg, rgba(255,233,91,0.72), rgba(255,67,173,0.74), rgba(58,12,119,0.84)), url("assets/rocket-ranger-bg.jpg") center / cover no-repeat; color: #fff; box-shadow: 0 34px 120px rgba(18,5,42,0.7), 0 0 70px rgba(255,233,91,0.42); }
+    .win-card.is-stampede span { color: #fff7a8; }
+    @keyframes confettiRain {
+      0% { opacity: 0; transform: translateY(-22px) scale(0.72) rotate(0deg); }
+      18% { opacity: 1; }
+      100% { opacity: 0; transform: translateY(70px) scale(1.08) rotate(10deg); }
+    }
+    @keyframes burstSpin {
+      0% { opacity: 0; transform: scale(0.4) rotate(0deg); }
+      28% { opacity: 0.95; }
+      100% { opacity: 0; transform: scale(1.8) rotate(90deg); }
+    }
+    @keyframes winPop {
+      0% { opacity: 0; transform: scale(0.74); }
+      28% { opacity: 1; transform: scale(1.08); }
+      78% { opacity: 1; transform: scale(1); }
+      100% { opacity: 0; transform: scale(0.98); }
+    }
+
+    .info-modal[hidden] { display: none; }
+    .info-modal {
+      position: fixed;
+      inset: 0;
+      z-index: 20;
+      display: grid;
+      place-items: center;
+      padding: 18px;
+      background: rgba(18, 5, 42, 0.72);
+    }
+    .info-dialog {
+      width: min(760px, 92vw);
+      max-height: min(760px, 86vh);
+      overflow: auto;
+      border: 1px solid rgba(255,255,255,0.22);
+      border-radius: 20px;
+      background: linear-gradient(135deg, #35116f, #7d27bd 58%, #f08bd6);
+      box-shadow: 0 28px 80px rgba(18, 5, 42, 0.55);
+    }
+    .info-head { display: flex; align-items: center; gap: 12px; padding: 16px 18px; border-bottom: 1px solid rgba(255,255,255,0.18); }
+    .info-head strong { font-size: 20px; font-weight: 950; }
+    .info-close { margin-left: auto; width: 36px; height: 36px; border: 0; border-radius: 999px; background: rgba(255,255,255,0.2); color: #fff; cursor: pointer; font-size: 24px; font-weight: 950; }
+    .info-body { display: grid; gap: 14px; padding: 18px; }
+    .info-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+    .info-card { padding: 12px; border-radius: 14px; background: rgba(255,255,255,0.14); }
+    .info-card span { display: block; color: rgba(255,255,255,0.72); font-size: 11px; font-weight: 850; text-transform: uppercase; }
+    .info-card strong { display: block; margin-top: 4px; font-size: 18px; }
+    .paytable { width: 100%; border-collapse: collapse; overflow: hidden; border-radius: 14px; background: rgba(255,255,255,0.12); }
+    .paytable th, .paytable td { padding: 9px 10px; border-bottom: 1px solid rgba(255,255,255,0.14); text-align: left; font-size: 13px; }
+    .paytable th { color: rgba(255,255,255,0.72); text-transform: uppercase; font-size: 11px; }
+    .info-copy { margin: 0; color: rgba(255,255,255,0.88); font-size: 14px; line-height: 1.45; }
+
+    @media (max-width: 900px) {
+      body { overflow: auto; }
+      .game-shell { --symbol-size: min(calc((100vw - 64px) / 5), 128px); height: auto; min-height: 100vh; overflow: visible; }
+      .stats { width: 100%; grid-template-columns: repeat(2, 1fr); }
+      .game-board { grid-template-columns: 1fr; }
+      .reel-panel { overflow: visible; }
+      .reel-grid {
+        min-height: 0;
+        height: auto;
+        grid-template-columns: repeat(5, var(--symbol-size));
+        grid-template-rows: repeat(4, var(--symbol-size));
+        justify-content: center;
+        align-content: start;
+      }
+      .control-panel { overflow: visible; }
+      .win-card { grid-template-columns: 1fr; justify-items: center; text-align: center; }
+      .win-symbol { width: 112px; }
+      .info-grid { grid-template-columns: 1fr; }
+    }
+
+    .game-shell::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      background:
+        radial-gradient(circle at 76% 18%, rgba(86,247,255,0.16), transparent 16%),
+        radial-gradient(circle at 18% 78%, rgba(255,78,227,0.13), transparent 20%);
+      mix-blend-mode: screen;
+    }
+    .screen-confetti::before,
+    .screen-confetti::after {
+      background:
+        linear-gradient(115deg, transparent 0 36%, rgba(86,247,255,0.95) 37% 39%, transparent 40% 100%),
+        linear-gradient(125deg, transparent 0 58%, rgba(255,78,227,0.9) 59% 61%, transparent 62% 100%),
+        radial-gradient(circle at 30% 40%, rgba(255,255,255,0.95) 0 2px, transparent 3px),
+        radial-gradient(circle at 72% 24%, rgba(248,233,106,0.95) 0 2px, transparent 3px);
+      animation-name: meteorShower;
+    }
+    @keyframes meteorShower {
+      0% { transform: translate3d(28%, -32%, 0) rotate(0deg); opacity: 0; }
+      18% { opacity: 1; }
+      100% { transform: translate3d(-30%, 28%, 0) rotate(0deg); opacity: 0; }
+    }
+    .win-card.is-stampede { background: linear-gradient(135deg, rgba(86,247,255,0.68), rgba(255,78,227,0.68), rgba(7,11,43,0.88)), url("assets/rocket-ranger-bg.jpg") center / cover no-repeat; }
+
+  </style>
+</head>
+<body>
+  <main class="game-shell" data-game="rocket-ranger">
+    <div class="screen-confetti" id="screenConfetti" hidden></div>
+    <header class="meter-header">
+      <div class="stats" aria-label="Game meters">
+        <div class="stat"><span>Balance</span><strong id="balanceValue">£1,000.00</strong></div>
+        <div class="stat"><span>Last win</span><strong id="lastWinValue">£0.00</strong></div>
+        <div class="stat"><span>Total won</span><strong id="totalWonValue">£0.00</strong></div>
+        <div class="stat"><span>Hyperdrive fuel</span><strong id="freeSpinValue">0</strong></div>
+        <div class="stat"><span>RTP</span><strong id="rtpValue">0.00%</strong></div>
+        <div class="stat"><span>Average RTP</span><strong id="avgRtpValue">94.00%</strong></div>
+      </div>
+    </header>
+
+    <section class="game-board">
+      <section class="reel-panel" aria-label="Rocket Ranger reels">
+        <div class="message-strip">
+          <span id="statusMessage">Press Spin to launch Rocket Ranger.</span>
+          <span class="multiplier" id="cascadeMeter">x1</span>
+          <div class="feature-meter" aria-label="Hyperdrive feature meters">
+            <div class="feature-progress" id="featureProgress" style="--free-progress: 0%">
+              <span class="feature-progress-fill" aria-hidden="true"></span>
+              <strong id="featureSpinsValue">Hyperdrive fuel: 0</strong>
+            </div>
+            <span class="feature-pill" id="featureWinValue">Hyperdrive win: £0.00</span>
+          </div>
+        </div>
+        <div class="reel-grid" id="reelGrid" aria-label="Five reels with four rows"></div>
+        <div class="win-overlay" id="winOverlay" hidden>
+          <div class="win-card">
+            <img class="win-symbol" id="winOverlaySymbol" src="assets/symbols/rocket.jpg" alt="" aria-hidden="true">
+            <div class="win-copy">
+              <span id="winOverlayTitle">Big win</span>
+              <strong id="winOverlayAmount">£0.00</strong>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <aside class="control-panel" aria-label="Game controls">
+        <h2>Play controls</h2>
+        <div class="bet-row">
+          <button class="round-btn" id="betDown" type="button" aria-label="Decrease bet">-</button>
+          <div class="bet-value" id="betValue">2</div>
+          <button class="round-btn" id="betUp" type="button" aria-label="Increase bet">+</button>
+        </div>
+        <button class="spin-button" id="spinButton" type="button">Spin</button>
+        <div class="utility-row">
+          <button class="utility-button sound-toggle" id="soundToggle" type="button" aria-label="Sound on" aria-pressed="true"></button>
+          <button class="utility-button" id="paytableButton" type="button">Paytable</button>
+          <button class="utility-button" id="aiBuildButton" type="button">AI Build</button>
+        </div>
+        <ul class="feature-list">
+          <li>Cluster wins replace connected symbols and can chain.</li>
+          <li>Spaceman Ranger Wild links matching clusters.</li>
+          <li>Four Hyperdrive Fuel cells launch 8 Hyperdrive spins.</li>
+        </ul>
+        <section class="ai-panel" aria-label="PlayAI optimisation recommendations">
+          <h3>PlayAI optimisation</h3>
+          <div class="ai-metrics">
+            <div class="ai-metric"><span>Target gap</span><strong id="rtpGapValue">0.00%</strong></div>
+            <div class="ai-metric"><span>Hit rate</span><strong id="hitRateValue">0%</strong></div>
+          </div>
+          <p id="aiInsightValue">Spin data will tune recommendations live.</p>
+          <button class="ai-apply" id="applyRecommendationButton" type="button">Apply recommendation</button>
+        </section>
+      </aside>
+    </section>
+  </main>
+
+  <div class="info-modal" id="infoModal" hidden>
+    <section class="info-dialog" role="dialog" aria-modal="true" aria-labelledby="infoTitle">
+      <div class="info-head">
+        <strong id="infoTitle">Paytable</strong>
+        <button class="info-close" id="infoClose" type="button" aria-label="Close panel">&times;</button>
+      </div>
+      <div class="info-body" id="infoBody"></div>
+    </section>
+  </div>
+
+  <script>
+    (() => {
+      const symbols = [
+        {
+          id: "spaceman",
+          name: "Spaceman Ranger Wild",
+          className: "mint",
+          weight: 2,
+          wild: true,
+          pay: {},
+          image: "assets/symbols/spaceman.jpg"
+        },
+        {
+          id: "fuel",
+          name: "Hyperdrive Fuel",
+          className: "wild",
+          weight: 3,
+          scatter: true,
+          pay: { 5: 1.4, 6: 2.4, 7: 4.2, 8: 7.6, 9: 11.2, 10: 16.5 },
+          image: "assets/symbols/fuel.jpg"
+        },
+        {
+          id: "rocket",
+          name: "Rocket",
+          className: "coin",
+          weight: 7,
+          pay: { 5: 1.25, 6: 2.1, 7: 3.8, 8: 7.1, 9: 10.8, 10: 15.6 },
+          image: "assets/symbols/rocket.jpg"
+        },
+        {
+          id: "moon",
+          name: "Moon",
+          className: "mint",
+          weight: 12,
+          pay: { 5: 0.8, 6: 1.45, 7: 2.6, 8: 4.4, 9: 6.4, 10: 9.6 },
+          image: "assets/symbols/moon.jpg"
+        },
+        {
+          id: "saturn",
+          name: "Saturn",
+          className: "pop",
+          weight: 16,
+          pay: { 5: 0.55, 6: 1.0, 7: 1.75, 8: 3.0, 9: 4.4, 10: 6.6 },
+          image: "assets/symbols/saturn.jpg"
+        },
+        {
+          id: "alien",
+          name: "Happy Alien",
+          className: "gum",
+          weight: 20,
+          pay: { 5: 0.42, 6: 0.8, 7: 1.35, 8: 2.25, 9: 3.4, 10: 5.1 },
+          image: "assets/symbols/alien.jpg"
+        },
+        {
+          id: "comet",
+          name: "Comet",
+          className: "coin",
+          weight: 22,
+          pay: { 5: 0.34, 6: 0.62, 7: 1.05, 8: 1.8, 9: 2.7, 10: 4.1 },
+          image: "assets/symbols/comet.jpg"
+        }
+      ];
+      const betSteps = [1, 2, 5, 10];
+      const cascadeMultipliers = [1, 2, 3, 5];
+      const targetRtp = 94;
+      const soundPref = (() => { try { return localStorage.getItem("rocketRangerSound"); } catch (error) { return null; } })();
+      const state = { balance: 1000, totalWon: 0, totalStaked: 0, lastWin: 0, betIndex: 1, multiplier: 1, freeSpins: 0, spinning: false, spins: 0, hitSpins: 0, lastCascadeCount: 0, featureActive: false, featureStartSpins: 0, featureWin: 0, biggestWin: 0, optimisationApplied: false, featureIntroPending: false, soundOn: soundPref !== "off" };
+      let overlayTimer = 0;
+      let confettiTimer = 0;
+      let overlayShowing = false;
+      const overlayQueue = [];
+      let currentCells = [];
+      let audioContext = null;
+      let audioMaster = null;
+      let spinHum = null;
+      const shell = document.querySelector(".game-shell");
+      const grid = document.getElementById("reelGrid");
+      const spinButton = document.getElementById("spinButton");
+      const betDown = document.getElementById("betDown");
+      const betUp = document.getElementById("betUp");
+      const soundToggle = document.getElementById("soundToggle");
+      const paytableButton = document.getElementById("paytableButton");
+      const aiBuildButton = document.getElementById("aiBuildButton");
+      const applyRecommendationButton = document.getElementById("applyRecommendationButton");
+      const infoModal = document.getElementById("infoModal");
+      const infoTitle = document.getElementById("infoTitle");
+      const infoBody = document.getElementById("infoBody");
+      const infoClose = document.getElementById("infoClose");
+      const screenConfetti = document.getElementById("screenConfetti");
+      const winOverlay = document.getElementById("winOverlay");
+      const winOverlayTitle = document.getElementById("winOverlayTitle");
+      const winOverlayAmount = document.getElementById("winOverlayAmount");
+      const winOverlaySymbol = document.getElementById("winOverlaySymbol");
+      const winCard = winOverlay.querySelector(".win-card");
+      const nodes = {
+        balance: document.getElementById("balanceValue"),
+        lastWin: document.getElementById("lastWinValue"),
+        totalWon: document.getElementById("totalWonValue"),
+        freeSpins: document.getElementById("freeSpinValue"),
+        rtp: document.getElementById("rtpValue"),
+        avgRtp: document.getElementById("avgRtpValue"),
+        bet: document.getElementById("betValue"),
+        message: document.getElementById("statusMessage"),
+        meter: document.getElementById("cascadeMeter"),
+        rtpGap: document.getElementById("rtpGapValue"),
+        hitRate: document.getElementById("hitRateValue"),
+        aiInsight: document.getElementById("aiInsightValue"),
+        applyRecommendation: applyRecommendationButton,
+        soundToggle,
+        featureProgress: document.getElementById("featureProgress"),
+        featureSpins: document.getElementById("featureSpinsValue"),
+        featureWin: document.getElementById("featureWinValue")
+      };
+
+      function bet() { return betSteps[state.betIndex]; }
+      const weightedSymbols = symbols.flatMap((symbol) => Array.from({ length: symbol.weight }, () => symbol));
+      function pickSymbol() { return weightedSymbols[Math.floor(Math.random() * weightedSymbols.length)]; }
+      function format(value) { return String(Math.round(value)); }
+      function money(value) { return new Intl.NumberFormat("en-GB", { style: "currency", currency: "GBP" }).format(value); }
+
+      function makeGrid() {
+        return Array.from({ length: 20 }, () => pickSymbol());
+      }
+
+      function makeSymbolNode(symbol, index = -1, classes = "") {
+        const cell = document.createElement("div");
+        cell.className = "symbol " + symbol.className + (classes ? " " + classes : "");
+        cell.setAttribute("aria-label", symbol.name);
+        if (classes.includes("is-spinning") && index >= 0) cell.style.setProperty("--spin-delay", Math.floor(index / 5) * 24 + "ms");
+        const image = document.createElement("img");
+        image.src = symbol.image;
+        image.alt = "";
+        image.decoding = "async";
+        image.loading = "eager";
+        cell.appendChild(image);
+        return cell;
+      }
+
+      function render(cells, winning = [], fresh = [], walking = [], spinning = [], locking = [], spacemanTrail = []) {
+        currentCells = cells.slice();
+        grid.classList.remove("is-rolling");
+        const wins = new Set(winning);
+        const freshCells = new Set(fresh);
+        const walkingCells = new Set(walking);
+        const spinningCells = new Set(spinning);
+        const lockingCells = new Set(locking);
+        const spacemanTrailCells = new Set(spacemanTrail);
+        grid.replaceChildren(...cells.map((symbol, index) => {
+          const classes = (wins.has(index) ? " is-win" : "") + (freshCells.has(index) ? " is-new" : "") + (walkingCells.has(index) ? " is-walking" : "") + (spinningCells.has(index) ? " is-spinning" : "") + (lockingCells.has(index) ? " is-locking" : "") + (spacemanTrailCells.has(index) ? " is-spaceman-trail" : "");
+          return makeSymbolNode(symbol, index, classes.trim());
+        }));
+      }
+
+      function ensureAudio() {
+        if (!audioContext) {
+          audioContext = new (window.AudioContext || window.webkitAudioContext)();
+          audioMaster = audioContext.createGain();
+          audioMaster.gain.setValueAtTime(state.soundOn ? 1 : 0, audioContext.currentTime);
+          audioMaster.connect(audioContext.destination);
+        }
+        if (audioContext.state === "suspended") audioContext.resume();
+        return audioContext;
+      }
+
+      function audioOutput() {
+        ensureAudio();
+        return audioMaster || audioContext.destination;
+      }
+
+      function setMasterMute(muted) {
+        if (!audioContext || !audioMaster) return;
+        const now = audioContext.currentTime;
+        audioMaster.gain.cancelScheduledValues(now);
+        audioMaster.gain.setValueAtTime(audioMaster.gain.value, now);
+        audioMaster.gain.linearRampToValueAtTime(muted ? 0 : 1, now + 0.04);
+      }
+
+      function tone(frequency, duration = 0.16, type = "sine", gain = 0.018, delay = 0, detune = 0) {
+        const ctx = ensureAudio();
+        const start = ctx.currentTime + delay;
+        const osc = ctx.createOscillator();
+        const amp = ctx.createGain();
+        const filter = ctx.createBiquadFilter();
+        osc.type = type;
+        osc.frequency.setValueAtTime(frequency, start);
+        osc.detune.setValueAtTime(detune, start);
+        filter.type = "lowpass";
+        filter.frequency.setValueAtTime(4600, start);
+        filter.Q.setValueAtTime(0.65, start);
+        amp.gain.setValueAtTime(0.0001, start);
+        amp.gain.exponentialRampToValueAtTime(gain, start + 0.024);
+        amp.gain.exponentialRampToValueAtTime(Math.max(gain * 0.24, 0.0002), start + duration * 0.58);
+        amp.gain.exponentialRampToValueAtTime(0.0001, start + duration);
+        osc.connect(filter).connect(amp).connect(audioOutput());
+        osc.start(start);
+        osc.stop(start + duration + 0.04);
+      }
+
+      function chord(frequencies, duration = 0.22, type = "sine", gain = 0.012, delay = 0) {
+        frequencies.forEach((freq, i) => tone(freq, duration, type, gain, delay, (i - 1) * 3));
+      }
+
+      function shimmer(delay = 0, gain = 0.018) {
+        const ctx = ensureAudio();
+        const start = ctx.currentTime + delay;
+        const duration = 0.18;
+        const buffer = ctx.createBuffer(1, Math.floor(ctx.sampleRate * duration), ctx.sampleRate);
+        const data = buffer.getChannelData(0);
+        for (let i = 0; i < data.length; i += 1) data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / data.length, 2.4);
+        const source = ctx.createBufferSource();
+        const amp = ctx.createGain();
+        const filter = ctx.createBiquadFilter();
+        filter.type = "bandpass";
+        filter.frequency.setValueAtTime(7200, start);
+        filter.Q.setValueAtTime(3.2, start);
+        amp.gain.setValueAtTime(0.0001, start);
+        amp.gain.exponentialRampToValueAtTime(gain, start + 0.012);
+        amp.gain.exponentialRampToValueAtTime(0.0001, start + duration);
+        source.buffer = buffer;
+        source.connect(filter).connect(amp).connect(audioOutput());
+        source.start(start);
+      }
+
+      function startSpinHum() {
+        stopSpinHum();
+      }
+
+      function stopSpinHum() {
+        if (!spinHum || !audioContext) return;
+        const end = audioContext.currentTime + 0.08;
+        spinHum.master.gain.exponentialRampToValueAtTime(0.0001, end);
+        spinHum.nodes.forEach(node => node.stop(end + 0.02));
+        spinHum = null;
+      }
+
+      function soundIcon(on) {
+        return on
+          ? '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9H4z"></path><path d="M16 8.5c1.2 1 1.8 2.1 1.8 3.5s-.6 2.5-1.8 3.5"></path><path d="M18.8 6c1.8 1.6 2.7 3.6 2.7 6s-.9 4.4-2.7 6"></path></svg>'
+          : '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9H4z"></path><path d="M3 3l18 18"></path></svg>';
+      }
+
+      function updateSoundToggle() {
+        nodes.soundToggle.innerHTML = soundIcon(state.soundOn);
+        nodes.soundToggle.setAttribute("aria-pressed", state.soundOn ? "true" : "false");
+        nodes.soundToggle.setAttribute("aria-label", state.soundOn ? "Sound on" : "Sound off");
+        nodes.soundToggle.title = state.soundOn ? "Sound on" : "Sound off";
+      }
+
+      function toggleSound() {
+        state.soundOn = !state.soundOn;
+        if (!state.soundOn) stopSpinHum();
+        setMasterMute(!state.soundOn);
+        try { localStorage.setItem("rocketRangerSound", state.soundOn ? "on" : "off"); } catch (error) {}
+        updateSoundToggle();
+        if (state.soundOn) sound("win");
+      }
+
+      function sound(name) {
+        if (!state.soundOn) { stopSpinHum(); return; }
+        if (name === "spin") stopSpinHum();
+        else if (name === "stop") stopSpinHum();
+        else if (name === "reelStop") return;
+        else if (name === "win") { chord([523, 659, 784], 0.26, "sine", 0.014); shimmer(0.04, 0.014); tone(1046, 0.28, "sine", 0.010, 0.08); }
+        else if (name === "big") { chord([392, 494, 587], 0.34, "sine", 0.016); chord([523, 659, 784], 0.38, "sine", 0.014, 0.16); shimmer(0.1, 0.022); }
+        else if (name === "stampede") { [294, 392, 523, 659, 784, 1046].forEach((freq, i) => tone(freq, 0.24, "sine", 0.015, i * 0.055)); shimmer(0.18, 0.03); }
+        else if (name === "scatter") { tone(740, 0.18, "sine", 0.015); tone(988, 0.22, "sine", 0.012, 0.09); shimmer(0.08, 0.016); }
+        else if (name === "free") { chord([440, 554, 659], 0.3, "sine", 0.015); chord([587, 740, 880], 0.34, "sine", 0.014, 0.2); shimmer(0.16, 0.026); }
+        else if (name === "spaceman") { tone(420, 0.11, "triangle", 0.012); tone(630, 0.13, "sine", 0.011, 0.08); shimmer(0.08, 0.008); }
+      }
+
+      function evaluate(cells) {
+        const width = 5;
+        const height = 4;
+        let win = 0;
+        const winning = [];
+        const wins = [];
+        const paid = new Set();
+        const baseSymbols = symbols.filter((symbol) => !symbol.wild && !symbol.scatter);
+        const neighbours = (index) => {
+          const row = Math.floor(index / width);
+          const col = index % width;
+          return [
+            row > 0 ? index - width : -1,
+            row < height - 1 ? index + width : -1,
+            col > 0 ? index - 1 : -1,
+            col < width - 1 ? index + 1 : -1
+          ].filter((item) => item >= 0);
+        };
+
+        baseSymbols.forEach((base) => {
+          const visited = new Set();
+          for (let start = 0; start < cells.length; start += 1) {
+            if (visited.has(start) || cells[start].id !== base.id) continue;
+            const stack = [start];
+            const cluster = [];
+            const core = [];
+            visited.add(start);
+            while (stack.length) {
+              const index = stack.pop();
+              const symbol = cells[index];
+              if (symbol.id === base.id) core.push(index);
+              cluster.push(index);
+              neighbours(index).forEach((next) => {
+                if (visited.has(next)) return;
+                const nextSymbol = cells[next];
+                if (nextSymbol.id === base.id || nextSymbol.wild) {
+                  visited.add(next);
+                  stack.push(next);
+                }
+              });
+            }
+            if (cluster.length >= 5 && core.length >= 3) {
+              const count = Math.min(cluster.length, 10);
+              const amount = (base.pay[count] || base.pay[10] || 0) * bet() * state.multiplier;
+              win += amount;
+              cluster.forEach((index) => { winning.push(index); paid.add(index); });
+              wins.push({ row: "Cluster", count: cluster.length, name: base.name, symbol: base, amount, indexes: cluster.slice() });
+            }
+          }
+        });
+        return { win, winning: Array.from(paid), wins };
+      }
+
+      function updateStats() {
+        nodes.balance.textContent = money(state.balance);
+        nodes.lastWin.textContent = money(state.lastWin);
+        nodes.totalWon.textContent = money(state.totalWon);
+        nodes.freeSpins.textContent = format(state.freeSpins);
+        const featureTotal = Math.max(state.featureStartSpins || state.freeSpins || 0, state.freeSpins || 0);
+        const featureProgress = featureTotal > 0 ? Math.max(0, Math.min(100, state.freeSpins / featureTotal * 100)) : 0;
+        nodes.featureProgress.style.setProperty("--free-progress", featureProgress.toFixed(1) + "%");
+        nodes.featureSpins.textContent = featureTotal > 0 ? "Hyperdrive fuel: " + format(state.freeSpins) + " / " + format(featureTotal) : "Hyperdrive fuel: 0";
+        nodes.featureWin.textContent = "Hyperdrive win: " + money(state.featureWin);
+        nodes.rtp.textContent = state.totalStaked > 0 ? (state.totalWon / state.totalStaked * 100).toFixed(2) + "%" : "0.00%";
+        nodes.avgRtp.textContent = targetRtp.toFixed(2) + "%";
+        nodes.bet.textContent = format(bet());
+        nodes.meter.textContent = "x" + state.multiplier;
+        spinButton.textContent = state.freeSpins > 0 ? "HYPERDRIVE" : "SPIN";
+        shell.classList.toggle("is-free-mode", state.freeSpins > 0 || state.featureActive || state.spinning && spinButton.textContent === "HYPERDRIVE");
+        updateInsights();
+      }
+
+      function sessionRtp() {
+        return state.totalStaked > 0 ? state.totalWon / state.totalStaked * 100 : 0;
+      }
+
+      function updateInsights() {
+        const rtp = sessionRtp();
+        const gap = state.totalStaked > 0 ? rtp - targetRtp : 0;
+        nodes.rtpGap.textContent = (gap >= 0 ? "+" : "") + gap.toFixed(2) + "%";
+        nodes.hitRate.textContent = state.spins > 0 ? Math.round(state.hitSpins / state.spins * 100) + "%" : "0%";
+        if (state.optimisationApplied) {
+          nodes.aiInsight.textContent = "Applied: cluster reveal and count-up timing are active in this experience.";
+        } else if (state.spins < 3) {
+          nodes.aiInsight.textContent = "Collecting early spin data before recommending changes.";
+        } else if (rtp > targetRtp + 12) {
+          nodes.aiInsight.textContent = "RTP is running hot. Recommendation: reduce cluster frequency or hyperdrive trigger frequency.";
+        } else if (rtp < targetRtp - 12) {
+          nodes.aiInsight.textContent = "RTP is running cold. Recommendation: lift low-tier orbit pays or add more hyperdrive anticipation.";
+        } else if (state.lastCascadeCount >= 2) {
+          nodes.aiInsight.textContent = "Cascade engagement is strong. Recommendation: add count-up timing and line-by-line celebration.";
+        } else if (state.featureActive) {
+          nodes.aiInsight.textContent = "Hyperdrive mode is active. Recommendation: emphasize remaining fuel and retrigger tension.";
+        } else {
+          nodes.aiInsight.textContent = "Model is tracking close to target. Recommendation: polish space reel choreography next.";
+        }
+      }
+
+      function changeBet(delta) {
+        if (state.spinning) return;
+        state.betIndex = Math.max(0, Math.min(betSteps.length - 1, state.betIndex + delta));
+        updateStats();
+      }
+
+      function sleep(ms) { return new Promise((resolve) => window.setTimeout(resolve, ms)); }
+
+      function replaceWinningCells(cells, winning) {
+        const next = cells.slice();
+        const fresh = [];
+        winning.forEach((index) => {
+          next[index] = pickSymbol();
+          fresh.push(index);
+        });
+        return { cells: next, fresh };
+      }
+
+      function scatterCount(cells) {
+        return cells.filter((symbol) => symbol.scatter).length;
+      }
+
+      function lockedScatterCount(cells, throughColumn) {
+        let count = 0;
+        for (let col = 0; col <= throughColumn; col += 1) {
+          for (let row = 0; row < 4; row += 1) {
+            if (cells[row * 5 + col].scatter) count += 1;
+          }
+        }
+        return count;
+      }
+
+      function boostSpacemanWild(cells) {
+        const wildIndex = cells.findIndex((symbol, index) => symbol.wild && index % 5 < 4);
+        if (wildIndex < 0) return null;
+        const target = wildIndex + 1;
+        const next = cells.slice();
+        next[target] = cells[wildIndex];
+        next[wildIndex] = pickSymbol();
+        return { cells: next, from: wildIndex, to: target };
+      }
+
+      function triggerScreenConfetti(duration = 3200) {
+        window.clearTimeout(confettiTimer);
+        screenConfetti.hidden = false;
+        screenConfetti.classList.remove("is-active");
+        void screenConfetti.offsetWidth;
+        screenConfetti.classList.add("is-active");
+        confettiTimer = window.setTimeout(() => {
+          screenConfetti.classList.remove("is-active");
+          screenConfetti.hidden = true;
+        }, duration);
+      }
+
+      function runNextOverlay() {
+        if (overlayShowing || overlayQueue.length <= 0) return;
+        overlayShowing = true;
+        const next = overlayQueue.shift();
+        const confetti = next.tier === "big" || next.tier === "mega" || next.tier === "stampede";
+        winCard.className = "win-card" + (next.tier ? " is-" + next.tier : "") + (confetti ? " has-confetti" : "");
+        const art = next.symbol && next.symbol.image ? next.symbol : symbols.find((item) => item.id === "spaceman");
+        winOverlaySymbol.src = art.image;
+        winOverlaySymbol.alt = art.name;
+        winOverlayTitle.textContent = next.title;
+        winOverlayAmount.textContent = next.amount;
+        winOverlay.hidden = false;
+        if (confetti) triggerScreenConfetti(Math.max(3200, next.duration));
+        overlayTimer = window.setTimeout(() => {
+          winOverlay.hidden = true;
+          overlayShowing = false;
+          runNextOverlay();
+        }, next.duration);
+      }
+
+      function showWinOverlay(title, amount, duration = 2200, tier = "", symbol = null) {
+        const displayDuration = Math.max(4200, duration * 2.6);
+        overlayQueue.push({ title, amount, duration: displayDuration, tier, symbol });
+        runNextOverlay();
+      }
+
+      function animateMoney(node, from, to, duration = 760) {
+        if (Math.abs(to - from) < 0.005) {
+          node.textContent = money(to);
+          return Promise.resolve();
+        }
+        return new Promise((resolve) => {
+          const start = window.performance.now();
+          function frame(now) {
+            const progress = Math.min(1, (now - start) / duration);
+            const eased = 1 - Math.pow(1 - progress, 3);
+            node.textContent = money(from + (to - from) * eased);
+            if (progress < 1) window.requestAnimationFrame(frame);
+            else {
+              node.textContent = money(to);
+              resolve();
+            }
+          }
+          window.requestAnimationFrame(frame);
+        });
+      }
+
+      async function countUpWinMeters(spinWin, totalBefore, balanceBefore) {
+        if (spinWin <= 0) return;
+        await Promise.all([
+          animateMoney(nodes.lastWin, 0, spinWin, 780),
+          animateMoney(nodes.totalWon, totalBefore, state.totalWon, 780),
+          animateMoney(nodes.balance, balanceBefore, state.balance, 780)
+        ]);
+      }
+
+      function applyRecommendation() {
+        if (state.optimisationApplied) return;
+        state.optimisationApplied = true;
+        nodes.applyRecommendation.textContent = "Applied";
+        nodes.applyRecommendation.disabled = true;
+        sound("big");
+        showWinOverlay("Optimisation applied", "Win pacing upgraded", 1900, "big", symbols.find((item) => item.id === "spaceman"));
+        updateInsights();
+      }
+
+      async function spinReelsToResult(startCells, finalCells, isFreeSpin) {
+        nodes.message.textContent = isFreeSpin ? "Hyperdrive reels rolling..." : "Rocket reels rolling...";
+        sound("spin");
+        grid.classList.add("is-rolling");
+        grid.replaceChildren();
+        const strips = [];
+        for (let col = 0; col < 5; col += 1) {
+          const column = document.createElement("div");
+          column.className = "reel-column";
+          const strip = document.createElement("div");
+          strip.className = "reel-strip";
+          const fillerCount = 12 + col * 4;
+          strip.dataset.rollSteps = String(fillerCount + 4);
+          strip.style.transitionDuration = 980 + col * 260 + "ms";
+          strip.style.transitionDelay = col * 95 + "ms";
+          const stripSymbols = [];
+          for (let row = 0; row < 4; row += 1) stripSymbols.push(startCells[row * 5 + col]);
+          stripSymbols.push(...Array.from({ length: fillerCount }, () => pickSymbol()));
+          for (let row = 0; row < 4; row += 1) stripSymbols.push(finalCells[row * 5 + col]);
+          stripSymbols.forEach((symbol) => strip.appendChild(makeSymbolNode(symbol)));
+          column.appendChild(strip);
+          grid.appendChild(column);
+          strips.push(strip);
+        }
+        await sleep(40);
+        strips.forEach((strip) => {
+          const first = strip.children[0].getBoundingClientRect();
+          const second = strip.children[1].getBoundingClientRect();
+          const stepDistance = Math.max(1, second.top - first.top);
+          strip.style.transform = "translateY(-" + Number(strip.dataset.rollSteps) * stepDistance + "px)";
+        });
+        for (let col = 0; col < 5; col += 1) {
+          await sleep(col === 0 ? 980 : 355);
+          sound("reelStop");
+          const lockedScatters = lockedScatterCount(finalCells, col);
+          if (lockedScatters === 2 && col < 4) {
+            nodes.message.textContent = "2 Hyperdrive Fuel cells landed... watching the next reels.";
+            await sleep(260);
+          } else if (lockedScatters === 3 && col < 4) {
+            nodes.message.textContent = "3 Hyperdrive Fuel cells. One more starts Hyperdrive.";
+            sound("scatter");
+            showWinOverlay("Fuel chance", "One more...", 1300, "mini", symbols.find((item) => item.scatter));
+            await sleep(520);
+          }
+        }
+        sound("stop");
+        await sleep(180);
+        render(finalCells);
+        await sleep(80);
+      }
+
+      function winTier(amount) {
+        const stake = bet();
+        if (amount >= stake * 40) return { title: "Rocket Blast Win", tier: "stampede", duration: 3600, sound: "stampede" };
+        if (amount >= stake * 20) return { title: "Mega Orbit Win", tier: "mega", duration: 3000, sound: "big" };
+        if (amount >= stake * 8) return { title: "Laser Win", tier: "big", duration: 2400, sound: "big" };
+        if (amount > 0) return { title: "Orbit Win", tier: "mini", duration: 1700, sound: "win" };
+        return null;
+      }
+
+      async function spin() {
+        if (state.spinning) return;
+        state.spinning = true;
+        spinButton.disabled = true;
+        betDown.disabled = true;
+        betUp.disabled = true;
+        const isFreeSpin = state.freeSpins > 0;
+        const freeSpinsBefore = state.freeSpins;
+        if (isFreeSpin) {
+          if (!state.featureActive) {
+            state.featureActive = true;
+            state.featureStartSpins = freeSpinsBefore;
+            state.featureWin = 0;
+            state.featureIntroPending = true;
+          }
+          if (state.featureIntroPending) {
+            sound("free");
+            showWinOverlay("Rocket Ranger Hyperdrive", freeSpinsBefore + " fuel", 3200, "stampede", symbols.find((item) => item.scatter));
+            nodes.message.textContent = "Hyperdrive engaged.";
+            state.featureIntroPending = false;
+            await sleep(1700);
+          }
+          state.freeSpins -= 1;
+        }
+        else {
+          state.balance = Math.max(0, state.balance - bet());
+          state.totalStaked += bet();
+        }
+        state.lastWin = 0;
+        nodes.message.textContent = isFreeSpin ? "Hyperdrive burning..." : "Rocket reels spinning...";
+        state.multiplier = 1;
+        const startCells = currentCells.length === 20 ? currentCells.slice() : makeGrid();
+        let cells = makeGrid();
+        await spinReelsToResult(startCells, cells, isFreeSpin);
+        let spinWin = 0;
+        let celebrationSymbol = null;
+        let bestLineWin = 0;
+        let cascade = 0;
+        render(cells);
+        const openingScatters = scatterCount(cells);
+        if (openingScatters === 3) {
+          nodes.message.textContent = "3 Hyperdrive Fuel cells landed. One more would start Hyperdrive.";
+          await sleep(480);
+        }
+        await sleep(260);
+        while (cascade < cascadeMultipliers.length) {
+          state.multiplier = cascadeMultipliers[cascade];
+          updateStats();
+          const result = evaluate(cells);
+          if (result.win <= 0) break;
+          spinWin += result.win;
+          for (const candidate of result.wins) {
+            if (candidate.amount > bestLineWin) {
+              bestLineWin = candidate.amount;
+              celebrationSymbol = candidate.symbol;
+            }
+          }
+          for (const lineWin of result.wins) {
+            render(cells, lineWin.indexes);
+            nodes.message.textContent = "Cascade " + (cascade + 1) + ": " + lineWin.count + "x " + lineWin.name + " cluster paid " + money(lineWin.amount) + ".";
+            await sleep(result.wins.length > 1 ? 360 : 460);
+          }
+          render(cells, result.winning);
+          nodes.message.textContent = result.wins.length > 1
+            ? "Cascade " + (cascade + 1) + " total: " + money(result.win) + " at x" + state.multiplier + "."
+            : "Cascade " + (cascade + 1) + " paid " + money(result.win) + " at x" + state.multiplier + ".";
+          await sleep(360);
+          const replaced = replaceWinningCells(cells, result.winning);
+          cells = replaced.cells;
+          render(cells, [], replaced.fresh);
+          await sleep(220);
+          const spacemanBoost = boostSpacemanWild(cells);
+          if (spacemanBoost) {
+            cells = spacemanBoost.cells;
+            nodes.message.textContent = "Spaceman Ranger boosted one orbit right.";
+            sound("spaceman");
+            render(cells, [], [spacemanBoost.from], [spacemanBoost.to], [], [], [spacemanBoost.from]);
+            showWinOverlay("Spaceman Ranger", "Orbit boost", 1200, "mini", cells[spacemanBoost.to]);
+            await sleep(620);
+          }
+          cascade += 1;
+        }
+        state.lastCascadeCount = cascade;
+        const scatters = scatterCount(cells);
+        if (scatters >= 4) {
+          state.freeSpins += 8;
+          state.featureActive = true;
+          state.featureStartSpins = state.freeSpins;
+          state.featureWin = 0;
+          state.featureIntroPending = true;
+          nodes.message.textContent = "4 Hyperdrive Fuel cells launched Rocket Ranger Hyperdrive.";
+          sound("free");
+          showWinOverlay("Hyperdrive unlocked", "8 fuel spins", 3400, "stampede", symbols.find((item) => item.scatter));
+          await sleep(2200);
+        }
+        const totalBeforeWin = state.totalWon;
+        const balanceBeforeWin = state.balance;
+        state.lastWin = spinWin;
+        state.totalWon += spinWin;
+        state.balance += spinWin;
+        state.spins += 1;
+        if (spinWin > 0) state.hitSpins += 1;
+        state.biggestWin = Math.max(state.biggestWin, spinWin);
+        if (isFreeSpin) state.featureWin += spinWin;
+        if (isFreeSpin && state.featureActive && state.freeSpins === 0) {
+          nodes.message.textContent = "Hyperdrive complete: " + money(state.featureWin) + " total Hyperdrive win.";
+          sound("stampede");
+          showWinOverlay("Hyperdrive complete", money(state.featureWin), 3400, "stampede", symbols.find((item) => item.id === "fuel"));
+          state.featureActive = false;
+          state.featureIntroPending = false;
+          await sleep(1500);
+        } else if (spinWin > 0 && scatters < 4) {
+          nodes.message.textContent = cascade > 1
+            ? cascade + " cascades paid " + money(spinWin) + "."
+            : "Cluster win: " + money(spinWin) + ".";
+          const tier = winTier(spinWin);
+          if (tier) {
+            sound(tier.sound);
+            showWinOverlay(tier.title, money(spinWin), tier.duration, tier.tier, celebrationSymbol);
+          }
+        } else if (spinWin <= 0 && scatters < 4) {
+          nodes.message.textContent = "No win this spin. Try again.";
+        }
+        state.multiplier = 1;
+        updateStats();
+        await countUpWinMeters(spinWin, totalBeforeWin, balanceBeforeWin);
+        state.spinning = false;
+        spinButton.disabled = false;
+        betDown.disabled = false;
+        betUp.disabled = false;
+      }
+
+      function openInfo(title, html) {
+        infoTitle.textContent = title;
+        infoBody.innerHTML = html;
+        infoModal.hidden = false;
+      }
+
+      function closeInfo() { infoModal.hidden = true; }
+
+      function paytableMarkup() {
+        const rows = symbols.map((symbol) => "<tr><td>" + symbol.name + "</td><td>" + (symbol.wild ? "Wild linker" : symbol.scatter ? "Hyperdrive fuel" : "Cluster pays") + "</td><td>" + (symbol.pay[5] || "-") + "</td><td>" + (symbol.pay[7] || "-") + "</td><td>" + (symbol.pay[10] || "-") + "</td></tr>").join("");
+        return '<p class="info-copy">Demo paytable. Rocket Ranger pays connected clusters of five or more matching symbols. Spaceman Ranger Wilds link adjacent clusters. Cascades replace winning symbols and increase the multiplier through x1, x2, x3 and x5. Four or more Hyperdrive Fuel cells award 8 Hyperdrive spins.</p><table class="paytable"><thead><tr><th>Symbol</th><th>Role</th><th>5x</th><th>7x</th><th>10x</th></tr></thead><tbody>' + rows + '</tbody></table><p class="info-copy">Target direction: 94% RTP, medium volatility. Current build is a stakeholder demo and not certified for real-money use.</p>';
+      }
+
+      function aiBuildMarkup() {
+        return '<div class="info-grid"><div class="info-card"><span>Phase</span><strong>Second game prototype</strong></div><div class="info-card"><span>Features</span><strong>Clusters + Hyperdrive</strong></div><div class="info-card"><span>Wild feature</span><strong>Spaceman linker</strong></div><div class="info-card"><span>Assets</span><strong>Space symbol set</strong></div><div class="info-card"><span>RTP target</span><strong>94%</strong></div><div class="info-card"><span>Volatility</span><strong>Medium</strong></div></div><p class="info-copy">Plai AI recommendation: compare Animal Stampede and Rocket Ranger engagement side-by-side, then tune trigger frequency, cluster density and overlay pacing from live demo telemetry.</p>';
+      }
+
+      currentCells = makeGrid();
+      render(currentCells);
+      updateSoundToggle();
+      updateStats();
+      spinButton.addEventListener("click", spin);
+      betDown.addEventListener("click", () => changeBet(-1));
+      betUp.addEventListener("click", () => changeBet(1));
+      soundToggle.addEventListener("click", toggleSound);
+      paytableButton.addEventListener("click", () => openInfo("Paytable", paytableMarkup()));
+      aiBuildButton.addEventListener("click", () => openInfo("Plai AI build summary", aiBuildMarkup()));
+      applyRecommendationButton.addEventListener("click", applyRecommendation);
+      infoClose.addEventListener("click", closeInfo);
+      infoModal.addEventListener("click", (event) => { if (event.target === infoModal) closeInfo(); });
+      window.rocketRangerTestApi = { makeGrid, evaluate, spin, state, sessionRtp };
+    })();
+  </script>
+</body>
+</html>
