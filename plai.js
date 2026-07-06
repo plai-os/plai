@@ -477,6 +477,29 @@ const bingoFallbackImages = [
   "https://cdn-assets-eu.frontify.com/s3/frontify-enterprise-files-eu/eyJvYXV0aCI6eyJjbGllbnRfaWQiOiJjbGllbnQtZmhweXV6cXNtcm8xYm56NiJ9LCJwYXRoIjoibG90dG9sYW5kXC9hY2NvdW50c1wvMDlcLzQwMDA4MzBcL3Byb2plY3RzXC83XC9hc3NldHNcL2EwXC83Mzc4OVwvYmRmNzExODdiODRlZjM5MjAzZGMxZGIyZTkzYTZiYTYtMTY1MDUzNjgyNi5wbmcifQ:lottoland:qd4B52vr6FaNTWEmcbwhwbvkmf1xcD7gMnxn0BxVfUw?width=320&type=png"
 ];
 
+const EXCLUSIVE_PROTOTYPE_GAMES = [
+  {
+    id: "animal-stampede-exclusive",
+    source: "casino",
+    name: "Animal Stampede",
+    provider: "Gibraltar Studio",
+    image: "assets/game-covers/animal-stampede-cover.jpg",
+    playUrl: "#animal-stampede",
+    exclusive: true,
+    prototypeGame: "animal"
+  },
+  {
+    id: "rocket-ranger-exclusive",
+    source: "casino",
+    name: "Rocket Ranger",
+    provider: "Gibraltar Studio",
+    image: "assets/game-covers/rocket-ranger-cover.jpg",
+    playUrl: "#rocket-ranger",
+    exclusive: true,
+    prototypeGame: "rocket"
+  }
+];
+
 const fallbackGames = [
   {
     id: "starburst",
@@ -1599,23 +1622,32 @@ function renderEmergencyLobby(name, games) {
 function createEmergencyGameCard(game, sectionName) {
   const card = document.createElement("article");
   card.className = `game-card is-${game.source}`;
+  card.classList.toggle("is-exclusive", Boolean(game.exclusive));
   card.dataset.gameId = game.id;
   card.dataset.source = game.source;
   card.dataset.gameName = game.name;
   card.dataset.gameProvider = game.provider;
   card.dataset.sectionName = sectionName;
   card.dataset.playUrl = game.playUrl;
+  if (game.prototypeGame) card.dataset.prototypeGame = game.prototypeGame;
   card.setAttribute("role", "button");
   card.tabIndex = 0;
   card.setAttribute("aria-label", `${game.name} by ${game.provider}`);
   card.innerHTML = `
-    <span class="game-badge">${escapeHtml(displaySourceLabel(game.source))}</span>
+    <span class="game-badge">${escapeHtml(game.exclusive ? displaySourceLabel("exclusive") : displaySourceLabel(game.source))}</span>
     <span class="game-copy">
       <strong>${escapeHtml(game.name)}</strong>
       <small>${escapeHtml(game.provider)}</small>
     </span>
   `;
-  card.style.background = placeholderBackground(game.source);
+  if (game.image) {
+    const img = document.createElement("img");
+    img.alt = "";
+    img.src = game.image;
+    card.insertBefore(img, card.querySelector(".game-copy"));
+  } else {
+    card.style.background = placeholderBackground(game.source);
+  }
   return card;
 }
 
@@ -1707,10 +1739,21 @@ function applySiteLanguage() {
 }
 
 function displaySourceLabel(source) {
+  if (source === "exclusive") return "Exclusive";
   if (source === "casino") return t("sourceCasino");
   if (source === "live") return t("sourceLive");
   if (source === "bingo") return t("sourceBingo");
   return siteLanguage === "es" ? "Juego" : "Game";
+}
+
+function includeExclusivePrototypeGames(games) {
+  const seen = new Set(EXCLUSIVE_PROTOTYPE_GAMES.map((game) => uniqueGameKey(game)));
+  const filteredGames = games.filter((game) => {
+    const key = uniqueGameKey(game);
+    if (!key || seen.has(key)) return false;
+    return true;
+  });
+  return EXCLUSIVE_PROTOTYPE_GAMES.concat(filteredGames);
 }
 
 function gameCountLabel(count) {
@@ -1727,7 +1770,7 @@ async function loadGames({ force = false } = {}) {
     builderState = await readBuilderState();
     const cached = force ? null : await readCachedGames();
     const games = cached || await requestStaticCatalogue();
-    const playableGames = normaliseGames(games);
+    const playableGames = includeExclusivePrototypeGames(normaliseGames(games));
 
     if (!playableGames.length) {
       throw new Error("No playable games were found.");
@@ -1743,7 +1786,7 @@ async function loadGames({ force = false } = {}) {
       message: error.message,
       area: "catalogue"
     });
-    currentGames = fallbackGames;
+    currentGames = includeExclusivePrototypeGames(fallbackGames);
     renderSite();
     setStatus(
       t("fallbackContent"),
@@ -2298,12 +2341,14 @@ function createGameCard(game, context = {}) {
   card.dataset.sectionName = context.sectionName || "";
   card.dataset.position = String(context.position ?? "");
   card.dataset.playUrl = game.playUrl;
+  if (game.prototypeGame) card.dataset.prototypeGame = game.prototypeGame;
   card.setAttribute("role", "button");
   card.tabIndex = 0;
   card.setAttribute("aria-label", `${game.name} by ${game.provider}`);
   card.classList.add(`is-${game.source}`);
+  card.classList.toggle("is-exclusive", Boolean(game.exclusive));
   card.classList.toggle("is-in-my-casino", isGameInMyCasino(game.id));
-  badge.textContent = displaySourceLabel(game.source);
+  badge.textContent = game.exclusive ? displaySourceLabel("exclusive") : displaySourceLabel(game.source);
   title.textContent = game.name;
   provider.textContent = game.provider;
 
@@ -3769,7 +3814,7 @@ function closeBubblegumStampedeModal() {
   document.body.classList.remove("plai-bubblegum-game-open");
 }
 
-const PROTOTYPE_GAME_RELEASE = "20260706-rocket-ranger";
+const PROTOTYPE_GAME_RELEASE = "20260706-exclusive-covers";
 const PROTOTYPE_GAME_CONFIG = {
   animal: {
     title: "Animal Stampede",
@@ -3843,6 +3888,8 @@ function openBubblegumStampedeModal() {
 }
 
 function choosePrototypeGame(game, gameCard) {
+  if (gameCard?.dataset.prototypeGame) return gameCard.dataset.prototypeGame;
+  if (game?.prototypeGame) return game.prototypeGame;
   const name = (game?.name || "").toLowerCase();
   if (/rocket|space|star|moon|alien|cosmic/.test(name)) return "rocket";
   const position = Number(gameCard?.dataset.position || 0);
