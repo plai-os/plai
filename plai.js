@@ -3795,7 +3795,7 @@ function openBubblegumStampedeModal() {
     modal.setAttribute("role", "dialog");
     modal.setAttribute("aria-modal", "true");
     modal.setAttribute("aria-label", "Animal Stampede");
-    const gameUrl = new URL("games/bubblegum-stampede/index.html?v=20260706-premium-audio", window.location.href).toString();
+    const gameUrl = new URL("games/bubblegum-stampede/index.html?v=20260706-rich-spin-audio", window.location.href).toString();
     modal.innerHTML = [
       '<div class="plai-bubblegum-game-shell" role="document">',
       '<div class="plai-bubblegum-game-bar">',

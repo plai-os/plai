@@ -685,34 +685,87 @@
       function startSpinHum() {
         const ctx = ensureAudio();
         stopSpinHum();
-        const osc = ctx.createOscillator();
+        const now = ctx.currentTime;
+        const master = ctx.createGain();
+        const bodyFilter = ctx.createBiquadFilter();
+        const motionFilter = ctx.createBiquadFilter();
+        const airFilter = ctx.createBiquadFilter();
+        const body = ctx.createOscillator();
+        const motion = ctx.createOscillator();
+        const sheen = ctx.createOscillator();
         const lfo = ctx.createOscillator();
         const lfoGain = ctx.createGain();
-        const amp = ctx.createGain();
-        const filter = ctx.createBiquadFilter();
-        osc.type = "triangle";
-        osc.frequency.setValueAtTime(74, ctx.currentTime);
+        const bodyGain = ctx.createGain();
+        const motionGain = ctx.createGain();
+        const sheenGain = ctx.createGain();
+        const airGain = ctx.createGain();
+        const noise = ctx.createBufferSource();
+        const noiseBuffer = ctx.createBuffer(1, ctx.sampleRate * 2, ctx.sampleRate);
+        const noiseData = noiseBuffer.getChannelData(0);
+        for (let i = 0; i < noiseData.length; i += 1) noiseData[i] = (Math.random() * 2 - 1) * 0.42;
+
+        master.gain.setValueAtTime(0.0001, now);
+        master.gain.exponentialRampToValueAtTime(0.052, now + 0.28);
+        master.gain.linearRampToValueAtTime(0.044, now + 0.9);
+
+        body.type = "sine";
+        body.frequency.setValueAtTime(58, now);
+        body.frequency.exponentialRampToValueAtTime(76, now + 0.42);
+        bodyFilter.type = "lowpass";
+        bodyFilter.frequency.setValueAtTime(240, now);
+        bodyFilter.Q.setValueAtTime(0.9, now);
+        bodyGain.gain.setValueAtTime(0.55, now);
+
+        motion.type = "triangle";
+        motion.frequency.setValueAtTime(118, now);
+        motion.frequency.exponentialRampToValueAtTime(188, now + 0.5);
+        motionFilter.type = "bandpass";
+        motionFilter.frequency.setValueAtTime(640, now);
+        motionFilter.frequency.linearRampToValueAtTime(980, now + 0.7);
+        motionFilter.Q.setValueAtTime(1.4, now);
+        motionGain.gain.setValueAtTime(0.22, now);
+
+        sheen.type = "sine";
+        sheen.frequency.setValueAtTime(420, now);
+        sheen.frequency.exponentialRampToValueAtTime(760, now + 0.56);
+        sheenGain.gain.setValueAtTime(0.0001, now);
+        sheenGain.gain.exponentialRampToValueAtTime(0.09, now + 0.35);
+        sheenGain.gain.linearRampToValueAtTime(0.055, now + 0.95);
+
         lfo.type = "sine";
-        lfo.frequency.setValueAtTime(5.4, ctx.currentTime);
-        lfoGain.gain.setValueAtTime(7, ctx.currentTime);
-        filter.type = "lowpass";
-        filter.frequency.setValueAtTime(520, ctx.currentTime);
-        filter.Q.setValueAtTime(0.7, ctx.currentTime);
-        amp.gain.setValueAtTime(0.0001, ctx.currentTime);
-        amp.gain.exponentialRampToValueAtTime(0.010, ctx.currentTime + 0.16);
-        lfo.connect(lfoGain).connect(osc.frequency);
-        osc.connect(filter).connect(amp).connect(ctx.destination);
-        osc.start();
-        lfo.start();
-        spinHum = { osc, lfo, amp };
+        lfo.frequency.setValueAtTime(8.8, now);
+        lfoGain.gain.setValueAtTime(16, now);
+        lfo.connect(lfoGain);
+        lfoGain.connect(motion.frequency);
+        lfoGain.connect(sheen.frequency);
+
+        noise.buffer = noiseBuffer;
+        noise.loop = true;
+        airFilter.type = "bandpass";
+        airFilter.frequency.setValueAtTime(1450, now);
+        airFilter.frequency.linearRampToValueAtTime(2600, now + 0.65);
+        airFilter.Q.setValueAtTime(0.65, now);
+        airGain.gain.setValueAtTime(0.0001, now);
+        airGain.gain.exponentialRampToValueAtTime(0.11, now + 0.24);
+        airGain.gain.linearRampToValueAtTime(0.075, now + 1.0);
+
+        body.connect(bodyFilter).connect(bodyGain).connect(master);
+        motion.connect(motionFilter).connect(motionGain).connect(master);
+        sheen.connect(sheenGain).connect(master);
+        noise.connect(airFilter).connect(airGain).connect(master);
+        master.connect(ctx.destination);
+        [body, motion, sheen, lfo, noise].forEach(node => node.start(now));
+        shimmer(0.04, 0.009);
+        spinHum = { nodes: [body, motion, sheen, lfo, noise], master, bodyGain, motionGain, sheenGain, airGain };
       }
 
       function stopSpinHum() {
         if (!spinHum || !audioContext) return;
-        const end = audioContext.currentTime + 0.14;
-        spinHum.amp.gain.exponentialRampToValueAtTime(0.0001, end);
-        spinHum.osc.stop(end + 0.02);
-        spinHum.lfo.stop(end + 0.02);
+        const end = audioContext.currentTime + 0.26;
+        spinHum.master.gain.cancelScheduledValues(audioContext.currentTime);
+        spinHum.master.gain.setValueAtTime(Math.max(spinHum.master.gain.value, 0.0001), audioContext.currentTime);
+        spinHum.master.gain.exponentialRampToValueAtTime(0.0001, end);
+        spinHum.nodes.forEach(node => node.stop(end + 0.04));
         spinHum = null;
       }
 
