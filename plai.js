@@ -3824,7 +3824,7 @@ function closeBubblegumStampedeModal() {
   document.body.classList.remove("plai-bubblegum-game-open");
 }
 
-const PROTOTYPE_GAME_RELEASE = "20260707-treasure-fit";
+const PROTOTYPE_GAME_RELEASE = "20260707-stone-nodes";
 const PROTOTYPE_GAME_CONFIG = {
   animal: {
     title: "Animal Stampede",
