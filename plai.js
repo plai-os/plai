@@ -497,6 +497,16 @@ const EXCLUSIVE_PROTOTYPE_GAMES = [
     playUrl: "#rocket-ranger",
     exclusive: true,
     prototypeGame: "rocket"
+  },
+  {
+    id: "treasure-trail-exclusive",
+    source: "casino",
+    name: "Treasure Trail",
+    provider: "Gibraltar Studio",
+    image: "assets/game-covers/treasure-trail-cover.jpg",
+    playUrl: "#treasure-trail",
+    exclusive: true,
+    prototypeGame: "treasure"
   }
 ];
 
@@ -3814,7 +3824,7 @@ function closeBubblegumStampedeModal() {
   document.body.classList.remove("plai-bubblegum-game-open");
 }
 
-const PROTOTYPE_GAME_RELEASE = "20260706-exclusive-covers";
+const PROTOTYPE_GAME_RELEASE = "20260707-treasure-trail";
 const PROTOTYPE_GAME_CONFIG = {
   animal: {
     title: "Animal Stampede",
@@ -3825,6 +3835,11 @@ const PROTOTYPE_GAME_CONFIG = {
     title: "Rocket Ranger",
     pill: "New",
     path: "games/rocket-ranger/index.html"
+  },
+  treasure: {
+    title: "Treasure Trail",
+    pill: "Exclusive",
+    path: "games/treasure-trail/index.html"
   }
 };
 
@@ -3891,6 +3906,7 @@ function choosePrototypeGame(game, gameCard) {
   if (gameCard?.dataset.prototypeGame) return gameCard.dataset.prototypeGame;
   if (game?.prototypeGame) return game.prototypeGame;
   const name = (game?.name || "").toLowerCase();
+  if (/treasure|trail|temple|jungle|expedition/.test(name)) return "treasure";
   if (/rocket|space|star|moon|alien|cosmic/.test(name)) return "rocket";
   const position = Number(gameCard?.dataset.position || 0);
   return position % 2 === 0 ? "animal" : "rocket";
