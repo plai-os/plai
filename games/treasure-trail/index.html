@@ -162,33 +162,111 @@
     }
     .trail-node {
       position: absolute;
-      width: clamp(72px, 9vw, 120px);
+      width: clamp(82px, 9.3vw, 128px);
       aspect-ratio: 1 / 1;
       transform: translate(-50%, -50%);
       display: grid;
       place-items: center;
-      border: 2px solid rgba(255,255,255,.26);
-      border-radius: 999px;
+      overflow: visible;
+      border: 2px solid rgba(255,230,109,.34);
+      border-radius: 28% 32% 30% 34%;
       color: #fff;
       background:
-        radial-gradient(circle at 38% 28%, rgba(255,255,255,.42), transparent 18%),
-        linear-gradient(135deg, rgba(255,230,109,.88), rgba(255,79,184,.72));
-      box-shadow: 0 16px 36px rgba(7,2,22,.38), 0 0 24px rgba(255,230,109,.22), inset 0 -10px 0 rgba(0,0,0,.12);
+        radial-gradient(circle at 34% 24%, rgba(255,255,255,.3), transparent 15%),
+        linear-gradient(145deg, rgba(93,83,105,.92), rgba(45,30,68,.94) 48%, rgba(15,8,34,.96));
+      box-shadow:
+        0 20px 42px rgba(7,2,22,.46),
+        0 0 0 5px rgba(255,230,109,.08),
+        inset 0 2px 0 rgba(255,255,255,.25),
+        inset 0 -14px 20px rgba(0,0,0,.28);
       cursor: pointer;
       transition: transform .18s ease, box-shadow .18s ease, filter .18s ease;
     }
+    .trail-node::before {
+      content: "";
+      position: absolute;
+      inset: 8px;
+      z-index: 0;
+      border-radius: inherit;
+      background:
+        radial-gradient(circle at 50% 34%, rgba(255,255,255,.08), transparent 28%),
+        linear-gradient(145deg, rgba(17,54,52,.76), rgba(18,7,42,.82));
+      box-shadow: inset 0 0 18px rgba(0,0,0,.28), inset 0 1px 0 rgba(255,255,255,.18);
+    }
+    .trail-node::after {
+      content: "";
+      position: absolute;
+      inset: -4px;
+      z-index: -1;
+      border-radius: inherit;
+      background: linear-gradient(145deg, rgba(255,230,109,.8), rgba(88,245,255,.32), rgba(255,79,184,.48));
+      filter: blur(10px);
+      opacity: .35;
+    }
     .trail-node:not(:disabled):hover,
     .trail-node:not(:disabled):focus-visible {
-      transform: translate(-50%, -50%) scale(1.06);
+      transform: translate(-50%, -50%) scale(1.07);
       outline: none;
-      box-shadow: 0 20px 42px rgba(7,2,22,.46), 0 0 32px rgba(88,245,255,.38), inset 0 -10px 0 rgba(0,0,0,.12);
+      box-shadow:
+        0 24px 52px rgba(7,2,22,.52),
+        0 0 0 5px rgba(88,245,255,.14),
+        0 0 36px rgba(88,245,255,.3),
+        inset 0 2px 0 rgba(255,255,255,.26),
+        inset 0 -14px 20px rgba(0,0,0,.28);
     }
     .trail-node:disabled { cursor: default; }
-    .trail-node.is-locked { filter: saturate(.7) brightness(.72); background: linear-gradient(135deg, rgba(132,112,146,.78), rgba(48,30,78,.78)); }
-    .trail-node.is-revealed { border-color: rgba(255,230,109,.86); background: linear-gradient(135deg, rgba(18,6,48,.88), rgba(28,122,82,.78)); }
+    .trail-node.is-locked { filter: saturate(.78) brightness(.78); }
+    .trail-node.is-locked::after { opacity: .12; }
+    .trail-node.is-revealed {
+      border-color: rgba(255,230,109,.94);
+      background: linear-gradient(145deg, rgba(255,230,109,.9), rgba(36,141,94,.84) 48%, rgba(18,7,42,.96));
+      border-radius: 999px;
+    }
+    .trail-node.is-revealed::after { opacity: .64; filter: blur(14px); }
     .trail-node.is-win { animation: nodeWin 900ms ease both; }
-    .trail-node span { display: block; font-size: clamp(30px, 4vw, 54px); line-height: 1; text-shadow: 0 4px 12px rgba(0,0,0,.34); }
-    .trail-node small { position: absolute; bottom: 9px; font-size: 11px; font-weight: 950; text-transform: uppercase; }
+    .mystery-mark {
+      position: relative;
+      z-index: 1;
+      display: grid;
+      place-items: center;
+      width: 62%;
+      aspect-ratio: 1 / 1;
+      border-radius: 999px;
+      color: rgba(255,255,255,.86);
+      background: radial-gradient(circle at 36% 28%, rgba(255,255,255,.16), rgba(255,255,255,.04));
+      font-size: clamp(34px, 4vw, 58px);
+      font-weight: 950;
+      text-shadow: 0 4px 18px rgba(0,0,0,.42);
+    }
+    .reward-art {
+      position: relative;
+      z-index: 1;
+      width: 78%;
+      aspect-ratio: 1 / 1;
+      object-fit: cover;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,.28);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.24), 0 10px 24px rgba(0,0,0,.32);
+    }
+    .trail-node small {
+      position: absolute;
+      left: 50%;
+      bottom: -11px;
+      z-index: 2;
+      transform: translateX(-50%);
+      min-width: 74px;
+      padding: 4px 8px;
+      border-radius: 999px;
+      color: #fff;
+      background: linear-gradient(135deg, rgba(18,7,42,.92), rgba(26,105,78,.9));
+      border: 1px solid rgba(255,230,109,.42);
+      box-shadow: 0 8px 16px rgba(7,2,22,.32);
+      font-size: 10px;
+      line-height: 1;
+      font-weight: 950;
+      text-transform: uppercase;
+      letter-spacing: 0;
+    }
     @keyframes nodeWin {
       0%, 100% { box-shadow: 0 16px 36px rgba(7,2,22,.38), 0 0 24px rgba(255,230,109,.22); }
       45% { box-shadow: 0 20px 50px rgba(7,2,22,.48), 0 0 48px rgba(255,230,109,.72); transform: translate(-50%, -50%) scale(1.08); }
@@ -269,7 +347,7 @@
     }
     .win-card span { color: var(--gold); font-size: 14px; font-weight: 950; text-transform: uppercase; }
     .win-card strong { font-size: clamp(36px, 5vw, 64px); line-height: 1; }
-    .win-card em { font-style: normal; font-size: clamp(42px, 6vw, 74px); }
+    .win-art { width: clamp(86px, 12vw, 128px); aspect-ratio: 1 / 1; object-fit: cover; border-radius: 999px; border: 2px solid rgba(255,255,255,.46); box-shadow: 0 18px 42px rgba(0,0,0,.36), 0 0 34px rgba(255,230,109,.3); }
     @keyframes winPop {
       0% { opacity: 0; transform: scale(.72); }
       24% { opacity: 1; transform: scale(1.06); }
@@ -322,7 +400,7 @@
         <div class="trail-map" id="trailMap" aria-label="Treasure stepping stones"></div>
         <div class="win-overlay" id="winOverlay" hidden>
           <div class="win-card">
-            <em id="winIcon" aria-hidden="true">💎</em>
+            <img class="win-art" id="winIcon" src="assets/rewards/gem.jpg" alt="" aria-hidden="true">
             <span id="winTitle">Trail win</span>
             <strong id="winAmount">£0.00</strong>
           </div>
@@ -374,13 +452,13 @@
   <script>
     (() => {
       const rewards = [
-        { id: "idol", name: "Sun Idol", icon: "🗿", weight: 18, amount: 0.55, collectible: "idol" },
-        { id: "gem", name: "Jungle Gem", icon: "💎", weight: 20, amount: 0.42, collectible: "gem" },
-        { id: "key", name: "Expedition Key", icon: "🗝", weight: 12, amount: 0.24, collectible: "key" },
-        { id: "chest", name: "Treasure Chest", icon: "✨", weight: 9, amount: 1.65 },
-        { id: "map", name: "Ancient Map", icon: "🧭", weight: 11, amount: 0.72, multiplier: 1 },
-        { id: "torch", name: "Temple Torch", icon: "🔥", weight: 14, amount: 0.3 },
-        { id: "vine", name: "Hidden Vine", icon: "🌿", weight: 16, amount: 0 }
+        { id: "idol", name: "Sun Idol", label: "Idol", art: "assets/rewards/sun-idol.jpg", weight: 18, amount: 0.55, collectible: "idol" },
+        { id: "gem", name: "Jungle Gem", label: "Gem", art: "assets/rewards/gem.jpg", weight: 20, amount: 0.42, collectible: "gem" },
+        { id: "key", name: "Expedition Key", label: "Key", art: "assets/rewards/key.jpg", weight: 12, amount: 0.24, collectible: "key" },
+        { id: "chest", name: "Treasure Chest", label: "Chest", art: "assets/rewards/chest.jpg", weight: 9, amount: 1.65 },
+        { id: "map", name: "Ancient Map", label: "Map", art: "assets/rewards/map.jpg", weight: 11, amount: 0.72, multiplier: 1 },
+        { id: "torch", name: "Temple Torch", label: "Torch", art: "assets/rewards/torch.jpg", weight: 14, amount: 0.3 },
+        { id: "vine", name: "Hidden Vine", label: "Vine", art: "assets/rewards/vine.jpg", weight: 16, amount: 0 }
       ];
       const positions = [
         [16, 74], [28, 54], [17, 32], [36, 22], [49, 39], [38, 69],
@@ -540,6 +618,12 @@
                 ? "RTP is running hot. Recommendation: reduce chest frequency or key conversion."
                 : "RTP is running cold. Recommendation: lift gem set value or add more map multipliers.";
       }
+      function rewardMarkup(reward) {
+        return '<img class="reward-art" src="' + reward.art + '" alt="" aria-hidden="true"><small>' + reward.label + '</small>';
+      }
+      function mysteryMarkup() {
+        return '<span class="mystery-mark">?</span><small>Step</small>';
+      }
       function renderTrail() {
         trailMap.replaceChildren(...positions.map(([x, y], index) => {
           const button = document.createElement("button");
@@ -552,7 +636,7 @@
           if (!state.active && !reward) button.classList.add("is-locked");
           if (reward) button.classList.add("is-revealed");
           button.disabled = !state.active || Boolean(reward);
-          button.innerHTML = reward ? '<span>' + reward.icon + '</span><small>' + reward.name.split(" ")[0] + '</small>' : '<span>?</span><small>Step</small>';
+          button.innerHTML = reward ? rewardMarkup(reward) : mysteryMarkup();
           button.addEventListener("click", () => revealNode(index, button));
           return button;
         }));
@@ -573,11 +657,11 @@
           starBurst.hidden = true;
         }, duration);
       }
-      function showWinOverlay(title, amount, icon = "✨", big = false) {
+      function showWinOverlay(title, amount, art = "assets/rewards/gem.jpg", big = false) {
         window.clearTimeout(overlayTimer);
         winTitle.textContent = title;
         winAmount.textContent = typeof amount === "number" ? money(amount) : amount;
-        winIcon.textContent = icon;
+        winIcon.src = art;
         winOverlay.hidden = false;
         if (big) triggerStars(5200);
         overlayTimer = window.setTimeout(() => { winOverlay.hidden = true; }, big ? 5200 : 3600);
@@ -612,7 +696,7 @@
         state.revealsLeft -= 1;
         sound(reward.collectible === "key" ? "key" : amount > 0 ? "tap" : "tap");
         button.classList.add("is-revealed");
-        button.innerHTML = '<span>' + reward.icon + '</span><small>' + reward.name.split(" ")[0] + '</small>';
+        button.innerHTML = rewardMarkup(reward);
         nodes.message.textContent = reward.name + (amount > 0 ? " revealed " + money(amount) + "." : " opened a quiet step.");
         updateStats();
         await sleep(220);
@@ -624,30 +708,26 @@
         const counts = rewardCounts();
         let setWin = 0;
         let title = "";
-        let icon = "✨";
         if (counts.idol >= 3 && !state.idolSetPaid) {
           state.idolSetPaid = true;
           setWin += bet() * state.multiplier * 3.2;
           title = "Idol set found";
-          icon = "🗿";
         }
         if (counts.gem >= 3 && !state.gemSetPaid) {
           state.gemSetPaid = true;
           setWin += bet() * state.multiplier * 2.4;
           title = title || "Gem set found";
-          icon = title ? icon : "💎";
         }
         if (counts.key >= 3 && !state.keySetPaid) {
           state.keySetPaid = true;
           setWin += bet() * state.multiplier * 1.2;
           state.keys = 3;
           title = "Expedition unlocked";
-          icon = "🗝";
         }
         if (setWin > 0) {
           state.roundWin += setWin;
           sound("win");
-          showWinOverlay(title, setWin, icon, setWin >= bet() * 6 || counts.key >= 3);
+          showWinOverlay(title, setWin, rewards.find((item) => item.id === (counts.key >= 3 ? "key" : title.includes("Idol") ? "idol" : "gem")).art, setWin >= bet() * 6 || counts.key >= 3);
           await sleep(finalOnly ? 600 : 360);
         }
       }
@@ -659,7 +739,7 @@
         if (state.keys >= 3) {
           state.keys = 0;
           state.expeditionSpins = 8;
-          showWinOverlay("Expedition Mode", "8 boosted reveals", "🗝", true);
+          showWinOverlay("Expedition Mode", "8 boosted reveals", rewards.find((item) => item.id === "key").art, true);
           nodes.message.textContent = "Three keys opened Expedition Mode.";
           sound("big");
         }
@@ -668,8 +748,8 @@
         state.balance += state.roundWin;
         state.spins += 1;
         if (state.roundWin > 0) state.hitSpins += 1;
-        if (state.roundWin >= bet() * 8) showWinOverlay("Temple treasure", state.roundWin, "✨", true);
-        else if (state.roundWin > 0) showWinOverlay("Trail complete", state.roundWin, "💎", false);
+        if (state.roundWin >= bet() * 8) showWinOverlay("Temple treasure", state.roundWin, rewards.find((item) => item.id === "chest").art, true);
+        else if (state.roundWin > 0) showWinOverlay("Trail complete", state.roundWin, rewards.find((item) => item.id === "gem").art, false);
         else nodes.message.textContent = "The trail was quiet. Try another route.";
         state.idolSetPaid = false;
         state.gemSetPaid = false;
