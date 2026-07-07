@@ -60,16 +60,16 @@
       box-shadow: 0 22px 64px rgba(8,3,24,.44), inset 0 1px 0 rgba(255,255,255,.16);
       backdrop-filter: blur(10px);
     }
-    .meter-header { padding: 10px; }
+    .meter-header { padding: 9px; }
     .stats {
       display: grid;
       grid-template-columns: repeat(6, minmax(92px, 1fr));
       gap: 10px;
       width: min(1100px, 86vw);
     }
-    .stat { min-height: 62px; padding: 10px; border-radius: 16px; background: var(--glass); }
-    .stat span { display: block; color: rgba(255,255,255,.72); font-size: 12px; font-weight: 850; text-transform: uppercase; }
-    .stat strong { display: block; margin-top: 4px; font-size: clamp(21px, 2vw, 28px); line-height: 1; }
+    .stat { min-height: 56px; padding: 9px 10px; border-radius: 15px; background: var(--glass); }
+    .stat span { display: block; color: rgba(255,255,255,.72); font-size: 11px; font-weight: 850; text-transform: uppercase; }
+    .stat strong { display: block; margin-top: 3px; font-size: clamp(19px, 1.8vw, 25px); line-height: 1; }
     .game-board {
       min-height: 0;
       display: grid;
@@ -272,35 +272,44 @@
       45% { box-shadow: 0 20px 50px rgba(7,2,22,.48), 0 0 48px rgba(255,230,109,.72); transform: translate(-50%, -50%) scale(1.08); }
     }
     .control-panel {
+      min-height: 0;
+      max-height: 100%;
       display: grid;
       align-content: start;
-      gap: 12px;
-      padding: clamp(14px, 1.6vw, 20px);
+      gap: 9px;
+      padding: clamp(12px, 1.25vw, 15px);
+      overflow: auto;
       background: linear-gradient(135deg, rgba(17,6,48,.82), rgba(60,116,78,.58));
+      scrollbar-width: thin;
+      scrollbar-color: rgba(255,230,109,.45) rgba(255,255,255,.08);
     }
-    .control-panel h2 { margin: 0; font-size: clamp(24px, 2.4vw, 32px); line-height: 1; }
-    .bet-row { display: grid; grid-template-columns: 58px minmax(0, 1fr) 58px; gap: 10px; }
+    .control-panel::-webkit-scrollbar { width: 8px; }
+    .control-panel::-webkit-scrollbar-track { background: rgba(255,255,255,.08); border-radius: 999px; }
+    .control-panel::-webkit-scrollbar-thumb { background: rgba(255,230,109,.45); border-radius: 999px; }
+    .control-panel h2 { margin: 0; font-size: clamp(21px, 2vw, 28px); line-height: 1; }
+    .bet-row { display: grid; grid-template-columns: 50px minmax(0, 1fr) 50px; gap: 8px; }
     .round-btn, .utility-button, .trail-button { border: 0; cursor: pointer; font-weight: 950; }
-    .round-btn { min-height: 58px; border-radius: 16px; color: var(--ink); background: rgba(255,255,255,.92); font-size: 26px; }
-    .bet-value { min-height: 58px; display: grid; place-items: center; border-radius: 16px; background: rgba(255,255,255,.15); font-size: 26px; font-weight: 950; }
-    .trail-button { min-height: 66px; border-radius: 18px; color: var(--ink); background: linear-gradient(135deg, var(--gold), #ffb64d); font-size: 26px; text-transform: uppercase; }
+    .round-btn { min-height: 50px; border-radius: 14px; color: var(--ink); background: rgba(255,255,255,.92); font-size: 24px; }
+    .bet-value { min-height: 50px; display: grid; place-items: center; border-radius: 14px; background: rgba(255,255,255,.15); font-size: 24px; font-weight: 950; }
+    .trail-button { min-height: 56px; border-radius: 16px; color: var(--ink); background: linear-gradient(135deg, var(--gold), #ffb64d); font-size: 22px; text-transform: uppercase; }
     .trail-button:disabled, .round-btn:disabled { opacity: .56; cursor: default; }
-    .utility-row { display: grid; grid-template-columns: 52px 1fr 1fr; gap: 8px; }
-    .utility-button { min-height: 42px; border-radius: 12px; color: #fff; background: rgba(255,255,255,.15); font-size: 13px; }
-    .sound-toggle svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
-    .collection-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
-    .collection-card { min-height: 68px; padding: 8px; border-radius: 14px; background: rgba(255,255,255,.14); }
-    .collection-card span { display: block; color: rgba(255,255,255,.72); font-size: 11px; font-weight: 850; text-transform: uppercase; }
-    .collection-card strong { display: block; margin-top: 4px; font-size: 22px; }
-    .feature-list { margin: 0; padding: 0; list-style: none; display: grid; gap: 10px; }
-    .feature-list li { padding: 12px; border-radius: 14px; background: rgba(255,255,255,.14); font-size: 14px; line-height: 1.22; font-weight: 760; }
-    .ai-panel { display: grid; gap: 10px; padding: 12px; border-radius: 16px; background: rgba(10,3,30,.34); }
+    .utility-row { display: grid; grid-template-columns: 44px 1fr 1fr; gap: 7px; }
+    .utility-button { min-height: 36px; border-radius: 11px; color: #fff; background: rgba(255,255,255,.15); font-size: 12px; }
+    .sound-toggle svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
+    .collection-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 7px; }
+    .collection-card { min-height: 54px; padding: 7px; border-radius: 13px; background: rgba(255,255,255,.14); }
+    .collection-card span { display: block; color: rgba(255,255,255,.72); font-size: 10px; font-weight: 850; text-transform: uppercase; }
+    .collection-card strong { display: block; margin-top: 2px; font-size: 20px; line-height: 1; }
+    .feature-list { margin: 0; padding: 0; list-style: none; display: grid; gap: 7px; }
+    .feature-list li { padding: 9px 10px; border-radius: 13px; background: rgba(255,255,255,.14); font-size: 12px; line-height: 1.18; font-weight: 760; }
+    .ai-panel { display: grid; gap: 8px; padding: 10px; border-radius: 15px; background: rgba(10,3,30,.34); }
     .ai-panel h3, .ai-panel p { margin: 0; }
-    .ai-metrics { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-    .ai-metric { padding: 8px; border-radius: 12px; background: rgba(255,255,255,.12); }
-    .ai-metric span { display: block; color: rgba(255,255,255,.62); font-size: 10px; font-weight: 850; text-transform: uppercase; }
-    .ai-metric strong { display: block; margin-top: 3px; font-size: 16px; }
-    .ai-panel p { color: rgba(255,255,255,.84); font-size: 13px; line-height: 1.35; font-weight: 720; }
+    .ai-panel h3 { font-size: 19px; line-height: 1.05; }
+    .ai-metrics { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; }
+    .ai-metric { padding: 7px; border-radius: 11px; background: rgba(255,255,255,.12); }
+    .ai-metric span { display: block; color: rgba(255,255,255,.62); font-size: 9px; font-weight: 850; text-transform: uppercase; }
+    .ai-metric strong { display: block; margin-top: 2px; font-size: 15px; line-height: 1; }
+    .ai-panel p { color: rgba(255,255,255,.84); font-size: 12px; line-height: 1.25; font-weight: 720; }
     .win-overlay[hidden], .star-burst[hidden], .info-modal[hidden] { display: none; }
     .win-overlay, .star-burst {
       position: absolute;
